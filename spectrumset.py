@@ -101,10 +101,10 @@ class SpectrumSet :
           function - the function to apply
           extra_arg - extra argument to hand the function.
           
-          The function is called function(name, extra_arg) e.g.
+          The function is called function(extra_arg, name) e.g.
         '''
         for name in self.spectra:
-            function(name, extra_arg)
+            function(extra_arg, name)
     
     #----------------------------------------------------------------------
     #  Unit tests.
@@ -115,6 +115,8 @@ class TestSpectrumSet(unittest.TestCase):
     def setUp(self):
         global _SpectrumNames
         _SpectrumNames = dict()
+        self.applyList = ['spec1', 'spec2', 'spec3', 'spec4']
+        self.fnresult = []
     def tearDown(self):
         pass
         
@@ -180,7 +182,22 @@ class TestSpectrumSet(unittest.TestCase):
         UpdateValidNames(s)
         listing.add(s)
         self.assertEqual(s, listing.getspectra())   
-
+    
+    def apply_function(self, name):
+        self.fnresult.append(name)
+        
+    def test_apply_1(self):
+        listing = SpectrumSet('aname')
+        listing.apply(TestSpectrumSet.apply_function, self)
+        self.assertEqual([], self.fnresult)
+    def test_apply_2(self):
+        listing = SpectrumSet('aname')
+        s = ['spec1', 'spec2', 'spec3', 'spec4']
+        UpdateValidNames(s)
+        listing.add(s)
+        listing.apply(TestSpectrumSet.apply_function, self)
+        self.assertEqual(s, self.fnresult)
+        
         
 if __name__ == '__main__':
     unittest.main()
