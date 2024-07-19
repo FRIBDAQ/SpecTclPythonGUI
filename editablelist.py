@@ -181,6 +181,63 @@ class EditableList(QWidget):
     def _get_selected_rows(self):
         return [self._list.row(x) for x in self._list.selectedItems()]
 
+class ListToListEditor(QWidget):
+    ''' 
+       This class provides an editor that lets you move things between a pair of lists.
+       the left list is just a plain list which starts out with all of the source items.
+       the right list, is an editale list which provides the controls for moving
+       items between lists.  It's add button moves the selection from the left list to the
+       right list, removing those items from the left list.
+       It's X button, removes the selection from the right list, appending the items to the
+       left listbox.
+       
+       Attributes:
+        list - items in the right list box (readonly)
+        leftbox - Gets the left list box widget (readonly)
+        rightbox - Gets the editable list on the right side of the megawidget (readonly)
+      Signals:
+        None. Note that we eat up all of the editable list signals.
+      Notable functions:
+        setSource - provides a list of items to put in the left box
+      
+        
+        
+      Normal use is to construct, and stock the source list (setSource), then leave things along
+      until some external button ("Ok" or "Accept") is clicked at which time list is invoked to get
+      the list of items that have been selected and the appropriate thing is done with that list.
+       
+    '''
+    def __init__(self, *args) :
+        super().__init__(*args)
+        
+        layout = QHBoxLayout()
+        self.setLayout(layout)
+        
+        self._sourcelist = QListWidget(self)
+        layout.addWidget(self._sourcelist)    
+        
+        self._destinationlist = EditableList("")    # no label.
+        layout.addWidget(self._destinationlist)
+        
+        # Attach to the editable list's signals:
+        
+        self._destinationlist.add.connect(self._addSelection)
+        self._destinationlist.remove.connect(self._returnItem)
+        
+    # public methods.
+    def setSource(self, items):
+        self._sourcelist.addItems(items)
+    
+    
+    # Signal handlers
+    
+    def _addSelection(self):
+        pass
+    def _returnItem(self, item):
+        self._sourcelist.addItem(item)
+    
+    # Attribute getters (all are readonly).
+        
 
 #------------------------- test code ------------------------------
 
