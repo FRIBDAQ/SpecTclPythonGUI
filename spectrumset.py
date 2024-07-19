@@ -32,7 +32,10 @@ def UpdateValidNames(names) :
     global _SpectrumNames
     _SpectrumNames= {x : x for x in names}
     
-    
+
+def ValidNames() :
+    global _SpectrumNames
+    return _SpectrumNames
 class SpectrumSet :
     ''' 
         Container class for a spectrum set.
@@ -198,6 +201,12 @@ class TestSpectrumSet(unittest.TestCase):
         listing.apply(TestSpectrumSet.apply_function, self)
         self.assertEqual(s, self.fnresult)
         
+    def test_valid_1(self):
+        self.assertEqual([], ValidNames())
+    def test_valid_1(self) :
+        s = ['spec1', 'spec2', 'spec3', 'spec4']
+        UpdateValidNames(s)
+        self.assertEqual(s, [x for x in ValidNames().keys()])
         
 if __name__ == '__main__':
     unittest.main()
