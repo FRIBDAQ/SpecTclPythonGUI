@@ -67,9 +67,10 @@ class SpectrumSet :
     
     def remove(self, spectrum):
         '''
-           Remove a single spectrum from the set.
+           Remove a single spectrum from the set. Raises 'ValueError' if spectrum
+           is not in the list.
         '''
-        this.spectra.remove(spectrum)
+        self.spectra.remove(spectrum)
 
     def validate(self):
         ''' Return a list of spectra that are not valid
@@ -77,7 +78,7 @@ class SpectrumSet :
         '''
         
         result = []
-        for spectrum in this.spectra:
+        for spectrum in self.spectra:
             if not spectrum in _SpectrumNames:
                 result.append(spectrum)
         
@@ -144,6 +145,26 @@ class TestSpectrumSet(unittest.TestCase):
         UpdateValidNames(['spec1'])
         listing.add(['spec1'])
         self.assertEqual(['spec1'], listing.spectra)
+    
+    def test_add_2(self):
+        listing = SpectrumSet(self, 'aname')
+        self.assertRaises(KeyError, SpectrumSet.add, self, 'junk')
+        
+    def test_remove_1(self):
+        s = ['spec1', 'spec2', 'spec3', 'spec4']
+        UpdateValidNames(s)
+        listing = SpectrumSet(self, 'aname')
+        listing.add(s)
+        listing.remove('spec3')
+        self.assertEqual(['spec1', 'spec2', 'spec4'], listing.spectra)
+    def test_remove_2(self):
+        s = ['spec1', 'spec2', 'spec3', 'spec4']
+        UpdateValidNames(s)
+        listing = SpectrumSet(self, 'aname')
+        listing.add(s)
+        self.assertRaises(ValueError, SpectrumSet.remove, listing, 'junk')    # no op.
+        
+
         
 if __name__ == '__main__':
     unittest.main()
