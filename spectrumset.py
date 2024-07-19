@@ -29,6 +29,7 @@ def UpdateValidNames(names) :
         (think Gamma Group).
         
     '''
+    global _SpectrumNames
     _SpectrumNames= {x : x for x in names}
     
     
@@ -36,7 +37,7 @@ class SpectrumSet :
     ''' 
         Container class for a spectrum set.
     '''
-    def __init(self, name, description=None):
+    def __init__(self, name, description=None):
         '''
           Create the spectrum set - The resulting set will be
           empty.
@@ -104,3 +105,45 @@ class SpectrumSet :
         for name in self.spectra:
             function(name, extra_arg)
     
+    #----------------------------------------------------------------------
+    #  Unit tests.
+    #---------------------------------------------------------------------
+    
+import unittest
+class TestSpectrumSet(unittest.TestCase):
+    def setUp(self):
+        global _SpectrumNames
+        _SpectrumNames = dict()
+    def tearDown(self):
+        pass
+        
+    def test_valid_names_1(self) :
+        
+        self.assertEqual({}, _SpectrumNames)
+    def test_valid_names_2(self):
+        
+        UpdateValidNames(['a', 'b', 'c']) 
+        self.assertEqual({'a': 'a', 'b': 'b', 'c': 'c'}, _SpectrumNames)
+
+    def test_create_0(self):
+        
+        listing = SpectrumSet('aname')
+        self.assertEqual('aname', listing.name)    
+        self.assertIsNone(listing.description)
+        self.assertEqual([], listing.spectra)
+    def test_create_1(self):
+        
+        listing = SpectrumSet('aname', 'list description')
+        self.assertEqual('aname', listing.name)    
+        self.assertEqual('list description', listing.description)
+        self.assertEqual([], listing.spectra)
+        
+    def test_add_1(self):
+        
+        listing = SpectrumSet(self, 'aname')
+        UpdateValidNames(['spec1'])
+        listing.add(['spec1'])
+        self.assertEqual(['spec1'], listing.spectra)
+        
+if __name__ == '__main__':
+    unittest.main()
