@@ -84,14 +84,14 @@ class SpectrumSet :
         
         return result
     
-    def name(self) :
+    def getname(self) :
         ''' Return name of the set: '''
         return self.name
-    def description(self):
+    def getdescription(self):
         ''' Return the description  cuold be None if not set. '''
         
         return self.description
-    def spectra(self):
+    def getspectra(self):
         ''' Returns the spectrum in the list '''
         return self.spectra
     def apply(self, function, extra_arg = None) :
@@ -141,29 +141,45 @@ class TestSpectrumSet(unittest.TestCase):
         
     def test_add_1(self):
         
-        listing = SpectrumSet(self, 'aname')
+        listing = SpectrumSet('aname')
         UpdateValidNames(['spec1'])
         listing.add(['spec1'])
         self.assertEqual(['spec1'], listing.spectra)
     
     def test_add_2(self):
-        listing = SpectrumSet(self, 'aname')
+        listing = SpectrumSet('aname')
         self.assertRaises(KeyError, SpectrumSet.add, self, 'junk')
         
     def test_remove_1(self):
         s = ['spec1', 'spec2', 'spec3', 'spec4']
         UpdateValidNames(s)
-        listing = SpectrumSet(self, 'aname')
+        listing = SpectrumSet('aname')
         listing.add(s)
         listing.remove('spec3')
         self.assertEqual(['spec1', 'spec2', 'spec4'], listing.spectra)
     def test_remove_2(self):
         s = ['spec1', 'spec2', 'spec3', 'spec4']
         UpdateValidNames(s)
-        listing = SpectrumSet(self, 'aname')
+        listing = SpectrumSet('aname')
         listing.add(s)
         self.assertRaises(ValueError, SpectrumSet.remove, listing, 'junk')    # no op.
-        
+    
+    def test_getname_1(self):
+        listing = SpectrumSet('aname')
+        self.assertEqual('aname', listing.getname())        
+    def test_getdescription_1(self):
+        self.assertIsNone(SpectrumSet('aname').getdescription())
+    def test_getdescription_2(self):
+        self.assertEqual('this is something', SpectrumSet('aname', 'this is something').getdescription())
+    def test_getspectra_1(self):
+        listing = SpectrumSet('aname')
+        self.assertEqual([], listing.getspectra())
+    def test_getspectra_2(self):
+        listing = SpectrumSet('aname')
+        s = ['spec1', 'spec2', 'spec3', 'spec4']
+        UpdateValidNames(s)
+        listing.add(s)
+        self.assertEqual(s, listing.getspectra())   
 
         
 if __name__ == '__main__':
