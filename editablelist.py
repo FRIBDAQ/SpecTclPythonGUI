@@ -281,20 +281,21 @@ class ListToListEditor(QWidget):
 
 #------------------------- test code ------------------------------
 
-test_items=['1', '2', '3', '4']
+if __name__ == "__main__":
+    test_items=['1', '2', '3', '4']
 
-widget = None
+    widget = None
 
-def ok():
-    global widget
-    print(widget.list())
-    widget.clearSource()
+    def ok():
+        global widget
+        print(widget.list())
+        widget.clearSource()
 
-if __name__ == '__main__':
-   
+    
+
     app = QApplication([])
     c   = QMainWindow()
-    
+
     main = QWidget()
     w = ListToListEditor(c)
     b = QPushButton("Ok", main)
