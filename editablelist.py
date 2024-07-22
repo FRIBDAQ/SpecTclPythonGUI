@@ -193,12 +193,13 @@ class ListToListEditor(QWidget):
        
        Attributes:
         list - items in the right list box (readonly)
-        leftbox - Gets the left list box widget (readonly)
-        rightbox - Gets the editable list on the right side of the megawidget (readonly)
+        sourcebox - Gets the left list box widget (readonly)
+        selectedbox - Gets the editable list on the right side of the megawidget (readonly)
       Signals:
         None. Note that we eat up all of the editable list signals.
-      Notable functions:
-        setSource - provides a list of items to put in the left box
+      Public methods
+        clearSource - clears the source list
+        appendSource - appends a list of  strings to the list.
       
         
         
@@ -214,6 +215,7 @@ class ListToListEditor(QWidget):
         self.setLayout(layout)
         
         self._sourcelist = QListWidget(self)
+        self._sourcelist.setSelectionMode(QAbstractItemView.MultiSelection)
         layout.addWidget(self._sourcelist)    
         
         self._destinationlist = EditableList("")    # no label.
@@ -225,54 +227,88 @@ class ListToListEditor(QWidget):
         self._destinationlist.remove.connect(self._returnItem)
         
     # public methods.
-    def setSource(self, items):
+    def appendSource(self, items):
         self._sourcelist.addItems(items)
-    
+    def clearSource(self):
+        while self._sourcelist.count():
+            self._sourcelist.takeItem(0)
     
     # Signal handlers
     
     def _addSelection(self):
-        pass
+        # Remove the selected items from self._source list and append them
+        # to self._destination list.
+        #  The append part is simple... 
+        
+        selection = self._sourcelist.selectedItems()
+        for item in selection:
+            self._destinationlist.appendItem(item.text())
+        
+        #  To remove the items we must
+        #  1.  Get a list of the rows that are selected, given the items.
+        #  2. Sort them in descending order so deleting items won't 
+        #      perturb the row numbers of remainders.
+        #  3. invoke take on each row in the sorted list.
+        
+        selected_rows  = []
+        for item in selection:
+            selected_rows.append(self._sourcelist.row(item))
+        selected_rows.sort(reverse=True)
+        
+        for row in selected_rows:
+            self._sourcelist.takeItem(row)
+            
+            
     def _returnItem(self, item):
         self._sourcelist.addItem(item)
     
     # Attribute getters (all are readonly).
+    
+    def list(self):
+        ''' Return the list of items in the destination list box. '''
+        return self._destinationlist.list()
+
+    def sourcebox(self):
+        ''' Returns the listbox that contains the (remaining) source items '''
+        return self._sourcelist
+    def selectedbox(self):
+        ''' Returns the editable list widget that contains the chosen items 
+            Note this is _not_ the listbox...but you can get that from 
+            what we return.
+        '''
+        return self._destinationlist
         
 
 #------------------------- test code ------------------------------
 
 test_items=['1', '2', '3', '4']
-l = None
-def test_remove(txt):
-    print(txt, 'was removed')
 
-def add_item():
-    global test_items
-    global l
-    if len(test_items) > 0:
-        item = test_items.pop()
-        l.appendItem(item)
-    else: 
-        print("no more to insert")
+widget = None
+
+def ok():
+    global widget
+    print(widget.list())
+    widget.clearSource()
 
 if __name__ == '__main__':
    
     app = QApplication([])
     c   = QMainWindow()
-    w   = EditableList('test')
+    
+    main = QWidget()
+    w = ListToListEditor(c)
+    b = QPushButton("Ok", main)
+    layout = QVBoxLayout()
+    layout.addWidget(w)
+    layout.addWidget(b)
+    main.setLayout(layout)
+    c.setCentralWidget(main)
 
-    print("Currently labeled: ", w.label())
-    w.setLabel('altered')
-
-    w.setList(['a','b','c','d','e','f'])
-    print(w.list())
-
-
-    w.remove.connect(test_remove)
-    w.add.connect(add_item)
-    l = w
-
-    c.setCentralWidget(w)
+    widget = w
+    w.appendSource([
+        "one", "two", "three", "four", "last"
+    ])
+    b.clicked.connect(ok)
 
     c.show()
     app.exec()
