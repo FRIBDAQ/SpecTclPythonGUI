@@ -131,6 +131,9 @@ class EditableList(QWidget):
     def setLabel(self, newLabel):
         self._label.setText(newLabel)
     
+    def listbox(self):
+        return self._list
+    
     # Internal signal handlers:
 
     def _delete_selection(self):

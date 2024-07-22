@@ -87,12 +87,90 @@ class BindingEditor(QWidget):
         self._ok.clicked.connect(self.ok)
         self._cancel.clicked.connect(self.cancel)
         
+    # Attribute implementations:
+    
+    
+    # name: 
+    def name(self):
+        ''' Return the contents of the name field: '''
+        return self._name.text()
+    def setName(self, name):
+        ''' Sets the contents of the name field '''  
+        self._name.setText(name)
         
+    # description:
+    
+    def description(self):
+        ''' Return the contents of the description field '''
+        return self._description.text()
+    def setDescription(self, description):
+        ''' Set the contents of the description field '''
+        self._description.setText(description)
+        
+    #  source
+    
+    def source(self): 
+        ''' Return the current contents of the source listbox '''
+        source = self._editor.sourcebox()
+        result = list() 
+        num = source.count()
+        for row  in range(num):
+            result.append(source.item(row).text())
+        return result        
+    def setSource(self, items):
+        ''' Sets the contents of the source box:'''
+        source = self._editor
+        source.clearSource()
+        source.appendSource(items)
+
+    # Bindings:
+    
+    def bindings(self):
+        ''' Return the names in the bindings: '''
+        return self._editor.list()
+    def setBindings(self, items):
+        ''' Set the contents of the bindings box '''
+        dest = self._editor.selectedbox()
+        box = dest.listbox()
+        
+        # Clear the listbox:
+        
+        while box.count() > 0:
+            box.takeItem(0)
+        
+        # Set new items:
+        
+        box.addItems(items)
+    
 if __name__ == "__main__":
+    
+
+    def Ok():
+        print(editor.name())
+        print(editor.description())
+        print(editor.bindings())
+        print("Leaving  ", editor.source())
+    
+    def Cancel():
+        print('Cancelled')
+          
     app = QApplication([])
     main = QMainWindow()
     editor = BindingEditor()
+    editor.setSource([
+        'one', 'two', 'three', 'four'
+    ])
+    editor.setBindings([
+        'bound', 'hand', 'and', 'foot'
+    ])
+    editor.setName("Aname")
+    editor.setDescription("Some inspirational list of stuff.")
+    
+    editor.ok.connect(Ok)
+    editor.cancel.connect(Cancel)
     main.setCentralWidget(editor)
     
     main.show()
     app.exec()
+    
+    
