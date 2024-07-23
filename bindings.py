@@ -66,7 +66,7 @@ class BindingGroupTab(QWidget) :
         - Description - the description of the binding list with that name.
         
         TheTableWidgetItem associated with the name, in addition to having the text attribute set to the
-        name of a binding list, has its data set to the list of spectra in the binding list, so the
+        name of a binding list, has its user data set to the list of spectra in the binding list, so the
         table maintains the full binding list information.
         
         
@@ -122,6 +122,7 @@ class BindingGroupTab(QWidget) :
         self._bindgroups.showGrid()
         self._bindgroups.setSelectionMode(QAbstractItemView.SingleSelection)
         self._bindgroups.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self._bindgroups.setEditTriggers(QAbstractItemView.NoEditTriggers)
         
         layout.addWidget(self._bindgroups)
         
@@ -190,12 +191,7 @@ class BindingGroupTab(QWidget) :
         self._bindgroups.setRowCount(len(bindings))
         row = 0
         for binding in bindings :
-            nameItem = QTableWidgetItem(binding['name'])
-            nameItem.setData(Qt.UserRole, binding['spectra'])
-            self._bindgroups.setItem(row, 0, nameItem)
-            
-            descitem = QTableWidgetItem(binding['description'])
-            self._bindgroups.setItem(row, 1, descitem)
+            self._setBinding(row, binding)
             
             row += 1
     # Selected binding:
@@ -233,7 +229,27 @@ class BindingGroupTab(QWidget) :
             self._changed.setText('*')
         else:
             self._changed.setText(' ')
-    #   private methods
+            
+    #----------------------  Public methods:
+    
+    def addBindingGroup(self, binding):
+        ''' Add a new binding group to the table.  It's the caller's responsiblitity to 
+            avoid duplicate names.
+        '''
+        row = self._bindgroups.rowCount()
+        self._bindgroups.setRowCount(row+1)
+        
+        self._setBinding(row, binding)
+        
+    def replaceBindingGroup(self, binding) :
+        found = self._findBinding(binding['name'])
+        if found is not None:
+            self._setBinding(found, binding) # found so replace
+        else:
+            self.addBindingGroup(binding)   # Not found so append
+        
+    
+    #---------   private methods
     
     def _getBinding(self, row):
         # Return the binding information for a row:
@@ -245,8 +261,30 @@ class BindingGroupTab(QWidget) :
             'name': name, 'description': desc, 'spectra': bindings
         }
         
+    def _setBinding(self, row, binding):    
         
-           
+        nameItem = QTableWidgetItem(binding['name'])
+        nameItem.setData(Qt.UserRole, binding['spectra'])
+        self._bindgroups.setItem(row, 0, nameItem)
+        
+        descitem = QTableWidgetItem(binding['description'])
+        self._bindgroups.setItem(row, 1, descitem)
+    
+    def _findBinding(self, name):
+        ''' 
+          Return either the row a binding is in or the None if there is no match
+          If there's more than one binding, the first found is returned.
+        '''
+        matches = self._bindgroups.findItems(name, Qt.MatchExactly)
+        for match in matches:
+            if self._bindgroups.column(match) == 0:
+                # Name matches so this row.
+                
+                return  self._bindgroups.row(match)
+        
+        # no matching _names_
+        return None
+        
 # For testing:
 
 if __name__ == '__main__':
@@ -267,10 +305,31 @@ if __name__ == '__main__':
         widget.setChanged(not changed)
     def save() :
         print('save')
+        widget.addBindingGroup({
+            'name': 'NewGroup',
+            'description': 'A dynamically added group of bindings',
+            'spectra': [
+                'newspec1', 'newspec2', 'newspect3'
+            ]
+        })
     def saveas() :
         print('saveas')
+        widget.replaceBindingGroup(
+            {
+                'name': 'binding1',
+                'description': 'A replaced binding',
+                'spectra': ['spec1', 'spec1', 'spec3', 'added']
+            }
+        )  #existing
     def bindall():
         print('bindall')
+        widget.replaceBindingGroup(
+            {
+                'name': 'noSuch',
+                'description': "replace -> new",
+                'spectra': ['s1', 's2', 's3']
+            }
+        )
     
     app = QApplication([])
     main = QMainWindow()
