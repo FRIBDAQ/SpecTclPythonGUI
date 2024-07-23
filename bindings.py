@@ -213,7 +213,26 @@ class BindingGroupTab(QWidget) :
             
         return result
     
+    def loaded(self):
+        ''' Returns a pair containing the name and the description of the 'loaded' binding'''
+        
+        return (self._loadedname.text(), self._loadeddescription.text())
     
+    def setLoaded(self, name, description):
+        self._loadedname.setText(name)
+        self._loadeddescription.setText(description)
+    
+    def changed(self):
+        if self._changed.text() == '*':
+            return True
+        else:
+            return False
+    
+    def setChanged(self, yes):
+        if yes :
+            self._changed.setText('*')
+        else:
+            self._changed.setText(' ')
     #   private methods
     
     def _getBinding(self, row):
@@ -240,8 +259,12 @@ if __name__ == '__main__':
         print(widget.selectedBinding())
     def load() :
         print('load')
+        print(widget.loaded())
     def add() :
         print('add')
+        changed = widget.changed()
+        print(changed)
+        widget.setChanged(not changed)
     def save() :
         print('save')
     def saveas() :
@@ -269,8 +292,9 @@ if __name__ == '__main__':
             'twod', 'gamma', 'gamma-summary'
         ]}
     ]
-    widget.setBindingGroups(bindings)
     
+    widget.setBindingGroups(bindings)
+    widget.setLoaded("summary", "A second binding")
     main.setCentralWidget(widget)
     
     main.show()
