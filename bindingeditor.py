@@ -1,6 +1,7 @@
 
 from PyQt5.QtWidgets import (
-    QWidget, QPushButton, QLineEdit, QLabel,
+    QWidget,  QLineEdit, QLabel,
+    QDialog, QDialogButtonBox,
     QHBoxLayout, QVBoxLayout,
     QApplication, QMainWindow
 )
@@ -22,13 +23,6 @@ class BindingEditor(QWidget):
         
         At the bottom are two buttons:
         
-        - Ok - signals ok - the slot that catches this should treat the signal as accepting the current widget 
-        state for a new or replaced binding set.
-        - Cancel - signals cancel - The slot that catches this should treat the signal as a rejrection of the
-        contents of the widget.
-        
-        It is normal (but not required) for this widget to be a dialog.
-        
         
         Attributes:
         - name   - Set/get the name field.
@@ -46,8 +40,7 @@ class BindingEditor(QWidget):
         in its internal data.
     '''
 
-    ok = pyqtSignal()
-    cancel = pyqtSignal()
+    
     
     def __init__(self) :
         super().__init__()
@@ -70,15 +63,6 @@ class BindingEditor(QWidget):
         self._editor = ListToListEditor(self)
         layout.addWidget(self._editor)
         
-        # Bottom has the action buttons:
-        
-        bottom = QHBoxLayout()
-        self._ok = QPushButton("Ok", self)
-        bottom.addWidget(self._ok)
-        self._cancel = QPushButton("Cancel", self)
-        bottom.addWidget(self._cancel)
-        
-        layout.addLayout(bottom)
         
         self.setLayout(layout)
         
@@ -142,17 +126,102 @@ class BindingEditor(QWidget):
         
         box.addItems(items)
     
-if __name__ == "__main__":
-    
+#   Dialog for a new bindings list.
 
-    def Ok():
-        print(editor.name())
-        print(editor.description())
-        print(editor.bindings())
-        print("Leaving  ", editor.source())
+class BindingEditorDialog(QDialog):
+    '''   This class wraps a BindingEditor widget in a modal dialog.
+            attributes:  editor - returns the editor widget.
+            setSpectra: sets the spectra on the left side of the widget.
+            setName:    sets the editor name.
+            setDescription sets the descripton.
+            getBindings: returns the current binding.
+    '''
+    def __init__(self, *args):
+        super().__init__(args)
+        
+        self.setWindowTitle('Create binding list')
+        
+        self._buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.cancel)
+        self._editor = BindingEditor(self)
+        layout = QVBoxLayout()
+        layout.addWidget(self._editor)
+        layout.addWidget(self._buttonBox)
+        self.setLayout(layout)
+        
+        self._buttonBox.accepted.connect(self.accept)
+        self._buttonbox.rejected.connect(self.reject)
     
-    def Cancel():
-        print('Cancelled')
+    def editor(self):
+        ''' Return the editor widget '''        
+        return self._editor
+    def setSpectra(self, spectra):
+        ''' Set the spectra in the left side of the box to 'specta' '''
+        self._editor.setSource(spectra)
+    def setName(self, name):
+        ''' Set the name of the binding list '''
+        self._editor.setName(name)
+    def setDescription(self, descr):
+        ''' Set the description of  the binding '''
+        self._editor.setDescription(descr)
+    def getBindings(self) :
+        ''' Return the edited binding in dict form: '''
+        
+        name = self._editor.name()
+        descr = self._editor.description()
+        spects = self._editor.bindings()
+        return {
+            'name': name, 'description': descr, 'spectra': spects
+        }
+    def setSpectra(self, spects):
+        ''' The bindings in the editor '''
+        self._editor.setBindings(spects)
+    
+# Dialog convenience methods:
+
+def _handleDialog(dialog):
+    if dialog.exec() :
+        result = dialog.getBindings()
+        if result['name'] == '':
+            return None
+        if len(result['sepctra']) == 0:
+                      return None
+        return result
+    else:
+        return None
+
+def promptNewBindingList(parent, spectra):
+    ''' Starts a spectrum editor dialog with only the spectra stocked.
+        Cancel click returns none as does an Ok clicked without a name 
+        or with an empty bindings list. 
+    '''
+    
+    dialog = BindingEditorDialog(parent)
+    dialog.setSpectra(spectra) 
+    return _handleDialog(dialog)
+
+#  Utility remove spectra fromt the list that are already bound.
+
+def _removeBoundSpectra(spectra, bindings):
+    result = []
+    for s in spectra:
+        if s not in bindings:
+            result.append(s)
+    
+    return result[]
+    
+def editBindgList(parent, spectra, bindinglist):
+    ''' Edit an existing binding list. 
+        Return is as for promptNewBindingList
+    '''
+    dialog = BindingEditorDialog(parent)
+    dialog.setName(bindinglist['name'])
+    dialog.setDescripiton(bindinglist['description'])
+    dialog.editor().setBindings(bindinglist['spectra']))
+    dialog.setSpectra(_removeBoundSpectra(spectra, bindinglist['spectra']))
+    return _handleDialog(dialog)
+
+
+if __name__ == "__main__":
           
     app = QApplication([])
     main = QMainWindow()
@@ -166,8 +235,6 @@ if __name__ == "__main__":
     editor.setName("Aname")
     editor.setDescription("Some inspirational list of stuff.")
     
-    editor.ok.connect(Ok)
-    editor.cancel.connect(Cancel)
     main.setCentralWidget(editor)
     
     main.show()

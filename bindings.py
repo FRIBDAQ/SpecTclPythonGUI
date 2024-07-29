@@ -58,7 +58,7 @@ class BindingGroupTab(QWidget) :
         - save - Save button clicked the currently loaded bindings over the selected binding group.
         - saveas - Save As... button was clicked to save the currently loaded bindings as a new binding gropu.
         - bindall - 'Bind All' button was clicked to bind all known spectra to the display.
-        
+        - update - Update button was clicked.
         Internal note:  The table widget uses a row selection model...so full rows get selected at any time.
         There are two columns for each row:
         
@@ -80,7 +80,7 @@ class BindingGroupTab(QWidget) :
         | +--------------------------------------------------------------+  |
         |  [Edit ...] [Load ] [Add]                                         |
         |  [Save] [Save As...] [New...]                                     |
-        |  [ Bind All]                                                      |
+        |  [ Bind All]  [Update]                                            |
         +-------------------------------------------------------------------+
         
     '''
@@ -91,6 +91,7 @@ class BindingGroupTab(QWidget) :
     save = pyqtSignal()
     saveas = pyqtSignal()
     bindall = pyqtSignal()
+    update = pyqtSignal()
     
     def __init__(self):
         super().__init__()
@@ -148,11 +149,13 @@ class BindingGroupTab(QWidget) :
         row4.addWidget(self._newbutton)
         layout.addLayout(row4)
         
-        # Row 5 is bind all buttons:
+        # Row 5 is bind all, Update buttons:
         
         row5 = QHBoxLayout()
         self._bindallbutton = QPushButton('Bind All', self)
         row5.addWidget(self._bindallbutton)
+        self._updatebutton = QPushButton('Update (spectra)', self)
+        row5.addWidget(self._updatebutton)
         layout.addLayout(row5)
         
         self.setLayout(layout)
@@ -166,6 +169,7 @@ class BindingGroupTab(QWidget) :
         self._savebutton.clicked.connect(self.save)
         self._saveasbutton.clicked.connect(self.saveas)
         self._bindallbutton.clicked.connect(self.bindall)
+        self._updatebutton.clicked.connect(self.update)
     
     # Attributes:
     
