@@ -92,6 +92,10 @@ class BindingsController:
         '''
         return self._groupsToDicts()
       
+      
+      def updateValidSpectra():
+        self._updateValidSpectra()  
+        
       #  Private methods
       
       # signal handlers.
