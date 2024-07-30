@@ -187,8 +187,8 @@ class BindingGroupTab(QWidget) :
         # First clear the table:
         
         while self._bindgroups.rowCount() > 0:
-            self._bindgroups.takItem(0,0)
-            self._bindgroups.takItem(0,1)
+            self._bindgroups.takeItem(0,0)
+            self._bindgroups.takeItem(0,1)
             
         #  Now fill it up:
         
@@ -196,8 +196,8 @@ class BindingGroupTab(QWidget) :
         row = 0
         for binding in bindings :
             self._setBinding(row, binding)
-            
             row += 1
+
     # Selected binding:
     def selectedBinding(self):
         selection = self._bindgroups.selectedItems()
@@ -266,7 +266,6 @@ class BindingGroupTab(QWidget) :
         }
         
     def _setBinding(self, row, binding):    
-        
         nameItem = QTableWidgetItem(binding['name'])
         nameItem.setData(Qt.UserRole, binding['spectra'])
         self._bindgroups.setItem(row, 0, nameItem)

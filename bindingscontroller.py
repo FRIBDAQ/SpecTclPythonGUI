@@ -39,7 +39,7 @@ class BindingsController:
       '''
       self._view = view
       self._client = client
-      self._bindinglists = []   # list of SpectrumSet Each is a dict of name, desc, and spectrumset.
+      self._bindinglists = list()  # list of SpectrumSet Each is a dict of name, desc, and spectrumset.
       self._spectrumList = SpectrumModel()
       
       self._updateValidSpectra()
@@ -71,7 +71,7 @@ class BindingsController:
       invalid spectra.. thus we do an _update first to have the most current
       set of bindings.
     '''
-    self._bindinglists = []
+    self._bindinglists = list()
     self._updateValidSpectra()
     for group in groups:
       spset = SpectrumSet(group['name'], group['description'])
@@ -95,7 +95,7 @@ class BindingsController:
     return self._groupsToDicts()
 
 
-  def updateValidSpectra():
+  def updateValidSpectra(self):
     self._updateValidSpectra()
     
   #  Private methods
@@ -203,8 +203,6 @@ class BindingsController:
     d = self._groupsToDicts()
     self._view.setBindingGroups(d) 
     
-    
-    self._view.setBindingGroups(self._groupsToDicts())
 
   def _groupsToDicts(self):
     # convert the bindings groups to dicts:
@@ -223,8 +221,7 @@ class BindingsController:
     
     result = SpectrumSet(d['name'], d['description'])
     try:
-      for s in d['spectra']:
-        result.add(s)
+      result.add(d['spectra'])
     except:
       result = None
     return result
@@ -244,7 +241,6 @@ class BindingsController:
         break
       else:
         i += 1
-    
     if not replaced:
       self._bindinglists.append(self._dictToList(modified))
 

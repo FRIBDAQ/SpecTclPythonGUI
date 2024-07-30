@@ -37,7 +37,6 @@ import bindingscontroller
 
 
 def _updateBindableSpectra(index):
-    print('tab is ', index)
     if index == bindings_tab_index:
         FileMenu.bindings_controller.updateValidSpectra()
         
@@ -204,7 +203,7 @@ if capabilities.get_program() == capabilities.Program.SpecTcl:
     var_view = TreeVariableView()
     var_controller = TreeVariableController(var_view, client)
     tabs.addTab(var_view, 'Variables')
-    tab_num ++ 1
+    tab_num += 1
 condition_view = gates.Gates()
 condition_controller = gates.Controller(condition_view, client)
 tabs.addTab(condition_view, 'Gates')

@@ -66,10 +66,7 @@ class BindingEditor(QWidget):
         
         self.setLayout(layout)
         
-        #  Now relay the clicked signals from the buttons appropriately:
         
-        self._ok.clicked.connect(self.ok)
-        self._cancel.clicked.connect(self.cancel)
         
     # Attribute implementations:
     
@@ -103,9 +100,9 @@ class BindingEditor(QWidget):
         return result        
     def setSource(self, items):
         ''' Sets the contents of the source box:'''
-        source = self._editor
-        source.clearSource()
-        source.appendSource(items)
+        
+        self._editor.clearSource()
+        self._editor.appendSource(items)
 
     # Bindings:
     
@@ -113,6 +110,7 @@ class BindingEditor(QWidget):
         ''' Return the names in the bindings: '''
         return self._editor.list()
     def setBindings(self, items):
+        
         ''' Set the contents of the bindings box '''
         dest = self._editor.selectedbox()
         box = dest.listbox()
@@ -137,19 +135,20 @@ class BindingEditorDialog(QDialog):
             getBindings: returns the current binding.
     '''
     def __init__(self, *args):
+    
         super().__init__(*args)
         
         self.setWindowTitle('Create binding list')
         
         self._buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        self._editor = BindingEditor(self)
+        self._editor = BindingEditor()
         layout = QVBoxLayout()
         layout.addWidget(self._editor)
         layout.addWidget(self._buttonBox)
         self.setLayout(layout)
         
         self._buttonBox.accepted.connect(self.accept)
-        self._buttonbox.rejected.connect(self.reject)
+        self._buttonBox.rejected.connect(self.reject)
     
     def editor(self):
         ''' Return the editor widget '''        
@@ -172,9 +171,11 @@ class BindingEditorDialog(QDialog):
         return {
             'name': name, 'description': descr, 'spectra': spects
         }
+    def spectra(self):
+        return self._editor.source()
     def setSpectra(self, spects):
         ''' The bindings in the editor '''
-        self._editor.setBindings(spects)
+        self._editor.setSource(spects)
     
 # Dialog convenience methods:
 
@@ -183,7 +184,7 @@ def _handleDialog(dialog):
         result = dialog.getBindings()
         if result['name'] == '':
             return None
-        if len(result['sepctra']) == 0:
+        if len(result['spectra']) == 0:
                       return None
         return result
     else:
@@ -213,10 +214,9 @@ def editBindingList(parent, spectra, bindinglist):
     ''' Edit an existing binding list. 
         Return is as for promptNewBindingList
     '''
-    print('editBindinList ', parent, spectra, bindinglist)
     dialog = BindingEditorDialog(parent)
     dialog.setName(bindinglist['name'])
-    dialog.setDescripiton(bindinglist['description'])
+    dialog.setDescription(bindinglist['description'])
     dialog.editor().setBindings(bindinglist['spectra'])
     dialog.setSpectra(_removeBoundSpectra(spectra, bindinglist['spectra']))
     return _handleDialog(dialog)
