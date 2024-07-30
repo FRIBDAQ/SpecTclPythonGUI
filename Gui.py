@@ -35,10 +35,11 @@ import HelpMenu
 import bindings
 import bindingscontroller
 
+
 def _updateBindableSpectra(index):
     print('tab is ', index)
     if index == bindings_tab_index:
-        bindings_controller.updateValidSpectra()
+        FileMenu.bindings_controller.updateValidSpectra()
         
 def setup_menubar(win, client):
     '''
@@ -210,8 +211,8 @@ tabs.addTab(condition_view, 'Gates')
 tab_num += 1
 
 #  The new tab to handle spectrum binding sets:
-bindings_view = bindings.BindingsGroupTab()
-bindings_controller = bindingscontroller.BindingsController(client, bindings_view)
+bindings_view = bindings.BindingGroupTab()
+FileMenu.bindings_controller = bindingscontroller.BindingsController(client, bindings_view)
 tabs.addTab(bindings_view, 'BindSets')
 bindings_tab_index = tab_num
 tabs.currentChanged.connect(_updateBindableSpectra)

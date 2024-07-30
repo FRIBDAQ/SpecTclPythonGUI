@@ -137,11 +137,11 @@ class BindingEditorDialog(QDialog):
             getBindings: returns the current binding.
     '''
     def __init__(self, *args):
-        super().__init__(args)
+        super().__init__(*args)
         
         self.setWindowTitle('Create binding list')
         
-        self._buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.cancel)
+        self._buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         self._editor = BindingEditor(self)
         layout = QVBoxLayout()
         layout.addWidget(self._editor)
@@ -207,16 +207,17 @@ def _removeBoundSpectra(spectra, bindings):
         if s not in bindings:
             result.append(s)
     
-    return result[]
+    return result
     
-def editBindgList(parent, spectra, bindinglist):
+def editBindingList(parent, spectra, bindinglist):
     ''' Edit an existing binding list. 
         Return is as for promptNewBindingList
     '''
+    print('editBindinList ', parent, spectra, bindinglist)
     dialog = BindingEditorDialog(parent)
     dialog.setName(bindinglist['name'])
     dialog.setDescripiton(bindinglist['description'])
-    dialog.editor().setBindings(bindinglist['spectra']))
+    dialog.editor().setBindings(bindinglist['spectra'])
     dialog.setSpectra(_removeBoundSpectra(spectra, bindinglist['spectra']))
     return _handleDialog(dialog)
 

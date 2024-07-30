@@ -10,7 +10,8 @@ import SpectrumList
 import os
 from  rustogramer_client import RustogramerException
 import DefinitionIO
-from Gui import bindings_controller
+
+bindings_controller = None
 
 class FileMenu(QObject):
     ''' 
