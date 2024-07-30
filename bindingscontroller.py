@@ -17,6 +17,7 @@ from bindings import *
 from SpectrumList import SpectrumModel
 from bindingeditor import promptNewBindingList, editBindingList
 from bindings import BindingGrouptab
+from PyQt5.QtWidgets import QMessageBox
 
 
 
@@ -28,7 +29,7 @@ class BindingsController:
     - loadBindingGroups - loads the binding groups from some external source
     - fetchGroups       - Fetches bindings so they can be saved somewhere.
   '''
-  def __init__(self, client, view);
+  def __init__(self, client, view):
       '''  client is a rustogrammer client object
               It will be used to:
               1. maintain the spectrumlist.
@@ -71,7 +72,7 @@ class BindingsController:
         self._bindinglists = []
         self._updateValidSpectra()
         for group in groups:
-          spset = SpectrumSet(group['name'], group['description']
+          spset = SpectrumSet(group['name'], group['description'])
           try:
             for name in group['spectra']:
               spset.add(name)         # could raise.
@@ -141,7 +142,7 @@ class BindingsController:
           if len(sel) == 1:
               sel = sel[0]
               try :
-                self._client.sbind_spectra(sel['spectra']
+                self._client.sbind_spectra(sel['spectra'])
                 self._view.setLoaded(sel['name'], sel['description'])
               except:
                 QMessageBox.warning(
@@ -165,7 +166,7 @@ Might not be enough shared memory''')
         
         bound = [x['name'] for x in self._client.sbind_list()['detail']]
         binding = {'name' :'', 'description' :'', 'spectra':bound}
-        modified = editBindigList(self._vew, ValidNames(), binding)
+        modified = editBindingList(self._vew, ValidNames(), binding)
         if modified is not None:
           self._addOrModifyBinding(modified)
           self._updateView()
@@ -180,9 +181,9 @@ Might not be enough shared memory''')
         #  Updates the set of valid spectra:
         
         spectra = self._client.spectrum_list()
-        UpdateValidNames([x['name']: for x in spectra])
+        UpdateValidNames([x['name'] for x in spectra])
         self._fixBindings()
-        sef._updateView()
+        self._updateView()
         
       ########################### 
       #  Utilities
@@ -206,7 +207,7 @@ Might not be enough shared memory''')
           grps.append(self._setToDict(bg))
         return grps
       def _setToDict(self, s):
-        return {['name' : s.getname(), 
+        return {'name' : s.getname(), 
                  'description': s.getdescription(), 
                  'spectra':s.getspectra()
           }
@@ -229,9 +230,9 @@ Might not be enough shared memory''')
         i = 0 
         replaced = False
         while i < len(self._bindinglists):
-          binding = self._dictToList(bindiglists[i])
+          binding = self._dictToList(self._bindinglists[i])
           if binding[i]['name'] == modified['name']:
-            bindinglists[i]  = self._setToDict(modified)
+            self._bindinglists[i]  = self._setToDict(modified)
             replaced = True
             break
           else:
@@ -252,8 +253,8 @@ Might not be enough shared memory''')
           if len(self._bindinglists.validate()) > 0:
             bad_indexes.append(i)
           i += 1
-        bad_indexes = sort(bad_indexes, revers=True)
-        for i in bad_indices:
+        bad_indexes = bad_indexes.sort(reversed=True)
+        for i in bad_indexes:
           self._bindiglists.pop(i)
           
           
