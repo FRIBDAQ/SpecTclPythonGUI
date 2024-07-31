@@ -205,7 +205,6 @@ class SpectrumModel(QStandardItemModel):
     def getNames(self):
         ''' Return a list of spectrum names '''
         result=[]
-        print("Getnames with", self.rowCount())
         for row in range(0, self.rowCount()):
             item = self.item(row, 0)
             result.append(item.text())
