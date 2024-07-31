@@ -71,18 +71,12 @@ class BindingsController:
       invalid spectra.. thus we do an _update first to have the most current
       set of bindings.
     '''
+    
     self._bindinglists = list()
     self._updateValidSpectra()
     for group in groups:
-      spset = SpectrumSet(group['name'], group['description'])
       try:
-        for name in group['spectra']:
-          spset.add(name)         # could raise.
-      
-        # All spectra are valid:
-        
-        self._bindinglists.append(spset)
-          
+        self._bindinglists.append(self._dictToList(group))
       except:
         pass                        # non fatal, just drop that set.            
     self._fixBindings() 
@@ -170,7 +164,6 @@ class BindingsController:
     if len(sel) == 1:
       sel = sel[0]
       bindings = self._client.sbind_list()['detail']
-      print(bindings)
       sel['spectra'] = [x['name'] for x in bindings]  
       self._addOrModifyBinding(sel)
       self._updateView()

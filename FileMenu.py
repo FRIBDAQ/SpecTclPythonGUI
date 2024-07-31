@@ -228,7 +228,7 @@ class FileMenu(QObject):
         self._restore_gate_applications(applications)
         
         bindsets = reader.read_bindsets()
-        bindings_controller.setBindingGroups(bindsets)
+        bindings_controller.loadBindingGroups(bindsets)
         
         # Simplest is to unbind all and rebind all:
         
