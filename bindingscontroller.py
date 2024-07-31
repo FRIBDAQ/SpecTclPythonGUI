@@ -124,7 +124,7 @@ class BindingsController:
       #  Edit the currently selected binding no-op if nothing is selected.
       
       current = self._view.selectedBinding()
-      if len(current == 1):
+      if len(current) == 1:
         current = current[0]
         modified = editBindingList(self._view, ValidNames(), current)
         if modified is not None:
@@ -165,9 +165,7 @@ class BindingsController:
       bindings = self._clinent.sbind_list()['detail']
       sel['spectra'] = [x['spectrum'] for x in bindings]  
       self._addOrModifyBinding(sel)
-      print("Updating view")
       self._updateView()
-      print("Updated")
 
   def _savenew(self):
     # Save current bindings as a new one:
@@ -176,7 +174,6 @@ class BindingsController:
     binding = {'name' :'', 'description' :'', 'spectra':bound}
     modified = editBindingList(self._view, ValidNames(), binding)
     if modified is not None:
-      print("Saving ", modified)
       self._addOrModifyBinding(modified)
       self._updateView()
 
@@ -204,7 +201,6 @@ class BindingsController:
     # invoking setBindingsGroups in the view:
     
     d = self._groupsToDicts()
-    print("Binding groups are now: ", d)
     self._view.setBindingGroups(d) 
     
 
@@ -238,18 +234,14 @@ class BindingsController:
     i = 0 
     replaced = False
     while i < len(self._bindinglists):
-      print("checking ", i, ":", self._bindinglists[i].getname())
       if self._bindinglists[i].getname() == modified['name']:
-        self._bindinglists[i]  = self._setToDict(modified)
+        self._bindinglists[i]  = self._dictToList(modified)
         replaced = True
-        print("Replaced")
         break
       else:
         i += 1
     if not replaced:
-      print("Appending ", modified)
       self._bindinglists.append(self._dictToList(modified))
-    print("Returning from _addOrModifyBinding")
 
   def _fixBindings(self):
     #  Normally called after the list of spectra have been updated.
