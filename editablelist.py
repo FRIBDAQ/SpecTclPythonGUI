@@ -231,6 +231,7 @@ class ListToListEditor(QWidget):
         
     # public methods.
     def appendSource(self, items):
+        print("Appending source list to ", items)
         self._sourcelist.addItems(items)
     def clearSource(self):
         while self._sourcelist.count():

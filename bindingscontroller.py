@@ -96,6 +96,7 @@ class BindingsController:
 
 
   def updateValidSpectra(self):
+    print("Update valid spectra")
     self._updateValidSpectra()
     
   #  Private methods
@@ -106,14 +107,20 @@ class BindingsController:
     # Using the client, get the list of spectra into our spectrum list model
     # fetch the names into the valid spectrum names of spectrumset
     
+    print("loading ", self._spectrumList)
     self._spectrumList.load_spectra(self._client)
     UpdateValidNames(self._spectrumList.getNames())
+    self._fixBindings()
+    self._updateView()
+    
+  
     
   def _createNew(self):
     # Pop up an editor dialog... with no  initial binding.  Accepting results in
     # a new binding.      
 
-    new = promptNewBindingList(self._view, self._spectrumList)
+    print("Model is ", self._spectrumList)
+    new = promptNewBindingList(self._view, self._spectrumList.getNames())
     if new is not None:
       # new is a bindings dict... add it to our bindings list and 
       # update the view:
@@ -161,9 +168,10 @@ class BindingsController:
     
     sel = self._view.selectedBinding()
     if len(sel) == 1:
-      self = sel[0]
-      bindings = self._clinent.sbind_list()['detail']
-      sel['spectra'] = [x['spectrum'] for x in bindings]  
+      sel = sel[0]
+      bindings = self._client.sbind_list()['detail']
+      print(bindings)
+      sel['spectra'] = [x['name'] for x in bindings]  
       self._addOrModifyBinding(sel)
       self._updateView()
 
@@ -183,14 +191,7 @@ class BindingsController:
     self._client.unbind_all()
     self._client.sbind_all()
 
-  def _updateValidSpectra(self):
-    #  Updates the set of valid spectra:
-    
-    spectra = self._client.spectrum_list()['detail']
   
-    UpdateValidNames([x['name'] for x in spectra])
-    self._fixBindings()
-    self._updateView()
     
   ########################### 
   #  Utilities
@@ -252,7 +253,7 @@ class BindingsController:
     bad_indexes = list()            # list of invalid indices
     i = 0
     while i < len(self._bindinglists):
-      if len(self._bindinglists.validate()) > 0:
+      if len(self._bindinglists[i].validate()) > 0:
         bad_indexes.append(i)
       i += 1
     bad_indexes.sort(reverse=True)

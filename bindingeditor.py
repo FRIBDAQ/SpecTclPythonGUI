@@ -100,7 +100,7 @@ class BindingEditor(QWidget):
         return result        
     def setSource(self, items):
         ''' Sets the contents of the source box:'''
-        
+        print("Setting source box to: ", items)
         self._editor.clearSource()
         self._editor.appendSource(items)
 
@@ -175,6 +175,7 @@ class BindingEditorDialog(QDialog):
         return self._editor.source()
     def setSpectra(self, spects):
         ''' The bindings in the editor '''
+        print("Setting spectra to: ", spects)
         self._editor.setSource(spects)
     
 # Dialog convenience methods:
@@ -195,7 +196,7 @@ def promptNewBindingList(parent, spectra):
         Cancel click returns none as does an Ok clicked without a name 
         or with an empty bindings list. 
     '''
-    
+    print("Prompt for new binding from among: ", spectra)
     dialog = BindingEditorDialog(parent)
     dialog.setSpectra(spectra) 
     return _handleDialog(dialog)

@@ -195,7 +195,6 @@ class BindingGroupTab(QWidget) :
         self._bindgroups.setRowCount(len(bindings))
         row = 0
         for binding in bindings :
-            print("adding at ", row, ":", binding)
             self._setBinding(row, binding)
             row += 1
 

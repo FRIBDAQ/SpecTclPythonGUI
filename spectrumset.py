@@ -30,6 +30,7 @@ def UpdateValidNames(names) :
         
     '''
     global _SpectrumNames
+    print('updating validnames: ', names)
     _SpectrumNames= {x : x for x in names}
     
 
