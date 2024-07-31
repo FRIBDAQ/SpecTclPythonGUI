@@ -186,15 +186,16 @@ class BindingGroupTab(QWidget) :
     def setBindingGroups(self, bindings) :
         # First clear the table:
         
-        while self._bindgroups.rowCount() > 0:
-            self._bindgroups.takeItem(0,0)
-            self._bindgroups.takeItem(0,1)
+        for row in range(self._bindgroups.rowCount()):
+            self._bindgroups.takeItem(row,0)
+            self._bindgroups.takeItem(row,1)
             
         #  Now fill it up:
         
         self._bindgroups.setRowCount(len(bindings))
         row = 0
         for binding in bindings :
+            print("adding at ", row, ":", binding)
             self._setBinding(row, binding)
             row += 1
 
