@@ -400,7 +400,7 @@ class DefinitionWriter:
                 id            INTEGER PRIMARY KEY,
                 save_id       INTEGER NOT NULL,    -- FK save set id.
                 name          TEXT NOT NULL,
-                description   TEXT DEFAULT NULL,
+                description   TEXT DEFAULT NULL
             )
         '''
         )
@@ -655,11 +655,16 @@ class DefinitionWriter:
 
         # Turn the spectrum names into spectrum ids and require that all of them translate:
         
-        cursor = self._sqlite.cursor(
-            'SELECT id FROM spectrum_defs where name in (:names)',
-            {'names': definition['spectra']}
+        cursor = self._sqlite.cursor()
+        
+        #  This is a bit tricky.. we need the right number of?'s in the IN clause
+        #  hence the wierd stuff in the {} and the formatted string.            
+        cursor.execute(
+            f'''SELECT id FROM spectrum_defs WHERE name IN ({','.join('?'*len(definition['spectra']))})''',
+            definition['spectra']
         )
         ids = cursor.fetchall()
+       
         if len(ids) != len(definition['spectra']):
             raise LookupError(
                 "At least one spectrum name in a binding list is not in the list of saved spectra"
@@ -673,7 +678,7 @@ class DefinitionWriter:
             cursor.execute('''
                 INSERT INTO binding_sets (save_id, name, description) 
                     VALUES(:savid, :name, :description)
-            ''', {'saveid': self._savid, 'name': definition['name'], 'description': definition['description']}
+            ''', {'savid': self._saveid, 'name': definition['name'], 'description': definition['description']}
             )
         
             bind_id = cursor.lastrowid         # So we can create the fk
@@ -686,9 +691,9 @@ class DefinitionWriter:
                     'bindid': bind_id,
                     'specid' : spec[0]
                 })
-            cursor.execute('''
-                INSERT INTO bound_spectrum (bindset_id, spectrum_id), 
-                    VALUES(:bindid, :specid)
+            cursor.executemany('''
+                INSERT INTO bound_spectra (bindset_id, spectrum_id)
+                    VALUES (:bindid, :specid)
             ''', bindings)
         except:
             cursor.execute('ROLLBACK TRANSACTION TO SAVEPOINT bindset_save')

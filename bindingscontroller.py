@@ -96,7 +96,7 @@ class BindingsController:
 
 
   def updateValidSpectra(self):
-    print("Update valid spectra")
+
     self._updateValidSpectra()
     
   #  Private methods
@@ -107,7 +107,7 @@ class BindingsController:
     # Using the client, get the list of spectra into our spectrum list model
     # fetch the names into the valid spectrum names of spectrumset
     
-    print("loading ", self._spectrumList)
+    
     self._spectrumList.load_spectra(self._client)
     UpdateValidNames(self._spectrumList.getNames())
     self._fixBindings()
@@ -119,7 +119,7 @@ class BindingsController:
     # Pop up an editor dialog... with no  initial binding.  Accepting results in
     # a new binding.      
 
-    print("Model is ", self._spectrumList)
+    
     new = promptNewBindingList(self._view, self._spectrumList.getNames())
     if new is not None:
       # new is a bindings dict... add it to our bindings list and 
