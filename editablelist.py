@@ -131,6 +131,9 @@ class EditableList(QWidget):
     def setLabel(self, newLabel):
         self._label.setText(newLabel)
     
+    def listbox(self):
+        return self._list
+    
     # Internal signal handlers:
 
     def _delete_selection(self):
@@ -181,41 +184,135 @@ class EditableList(QWidget):
     def _get_selected_rows(self):
         return [self._list.row(x) for x in self._list.selectedItems()]
 
+class ListToListEditor(QWidget):
+    ''' 
+       This class provides an editor that lets you move things between a pair of lists.
+       the left list is just a plain list which starts out with all of the source items.
+       the right list, is an editale list which provides the controls for moving
+       items between lists.  It's add button moves the selection from the left list to the
+       right list, removing those items from the left list.
+       It's X button, removes the selection from the right list, appending the items to the
+       left listbox.
+       
+       Attributes:
+        list - items in the right list box (readonly)
+        sourcebox - Gets the left list box widget (readonly)
+        selectedbox - Gets the editable list on the right side of the megawidget (readonly)
+      Signals:
+        None. Note that we eat up all of the editable list signals.
+      Public methods
+        clearSource - clears the source list
+        appendSource - appends a list of  strings to the list.
+      
+        
+        
+      Normal use is to construct, and stock the source list (setSource), then leave things along
+      until some external button ("Ok" or "Accept") is clicked at which time list is invoked to get
+      the list of items that have been selected and the appropriate thing is done with that list.
+       
+    '''
+    def __init__(self, *args) :
+        super().__init__(*args)
+        
+        layout = QHBoxLayout()
+        self.setLayout(layout)
+        
+        self._sourcelist = QListWidget(self)
+        self._sourcelist.setSelectionMode(QAbstractItemView.MultiSelection)
+        layout.addWidget(self._sourcelist)    
+        
+        self._destinationlist = EditableList("")    # no label.
+        layout.addWidget(self._destinationlist)
+        
+        # Attach to the editable list's signals:
+        
+        self._destinationlist.add.connect(self._addSelection)
+        self._destinationlist.remove.connect(self._returnItem)
+        
+    # public methods.
+    def appendSource(self, items):
+        self._sourcelist.addItems(items)
+    def clearSource(self):
+        while self._sourcelist.count():
+            self._sourcelist.takeItem(0)
+    
+    # Signal handlers
+    
+    def _addSelection(self):
+        # Remove the selected items from self._source list and append them
+        # to self._destination list.
+        #  The append part is simple... 
+        
+        selection = self._sourcelist.selectedItems()
+        for item in selection:
+            self._destinationlist.appendItem(item.text())
+        
+        #  To remove the items we must
+        #  1.  Get a list of the rows that are selected, given the items.
+        #  2. Sort them in descending order so deleting items won't 
+        #      perturb the row numbers of remainders.
+        #  3. invoke take on each row in the sorted list.
+        
+        selected_rows  = []
+        for item in selection:
+            selected_rows.append(self._sourcelist.row(item))
+        selected_rows.sort(reverse=True)
+        
+        for row in selected_rows:
+            self._sourcelist.takeItem(row)
+            
+            
+    def _returnItem(self, item):
+        self._sourcelist.addItem(item)
+    
+    # Attribute getters (all are readonly).
+    
+    def list(self):
+        ''' Return the list of items in the destination list box. '''
+        return self._destinationlist.list()
+
+    def sourcebox(self):
+        ''' Returns the listbox that contains the (remaining) source items '''
+        return self._sourcelist
+    def selectedbox(self):
+        ''' Returns the editable list widget that contains the chosen items 
+            Note this is _not_ the listbox...but you can get that from 
+            what we return.
+        '''
+        return self._destinationlist
+        
 
 #------------------------- test code ------------------------------
 
-test_items=['1', '2', '3', '4']
-l = None
-def test_remove(txt):
-    print(txt, 'was removed')
+if __name__ == "__main__":
+    test_items=['1', '2', '3', '4']
 
-def add_item():
-    global test_items
-    global l
-    if len(test_items) > 0:
-        item = test_items.pop()
-        l.appendItem(item)
-    else: 
-        print("no more to insert")
+    widget = None
 
-if __name__ == '__main__':
-   
+    def ok():
+        global widget
+        print(widget.list())
+        widget.clearSource()
+
+    
+
     app = QApplication([])
     c   = QMainWindow()
-    w   = EditableList('test')
 
-    print("Currently labeled: ", w.label())
-    w.setLabel('altered')
+    main = QWidget()
+    w = ListToListEditor(c)
+    b = QPushButton("Ok", main)
+    layout = QVBoxLayout()
+    layout.addWidget(w)
+    layout.addWidget(b)
+    main.setLayout(layout)
+    c.setCentralWidget(main)
 
-    w.setList(['a','b','c','d','e','f'])
-    print(w.list())
-
-
-    w.remove.connect(test_remove)
-    w.add.connect(add_item)
-    l = w
-
-    c.setCentralWidget(w)
+    widget = w
+    w.appendSource([
+        "one", "two", "three", "four", "last"
+    ])
+    b.clicked.connect(ok)
 
     c.show()
     app.exec()

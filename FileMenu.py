@@ -11,6 +11,8 @@ import os
 from  rustogramer_client import RustogramerException
 import DefinitionIO
 
+bindings_controller = None
+
 class FileMenu(QObject):
     ''' 
        Implements the file menu... init will instantiate it and
@@ -123,6 +125,10 @@ class FileMenu(QObject):
             if self._program == capabilities.Program.SpecTcl:
                 var_defs = self._client.treevariable_list()['detail']
                 saver.save_variables(var_defs)
+            
+            # Save the bindings groups 
+            
+            saver.save_binding_sets(bindings_controller.fetchGroups())
         except Exception as  e:
             error(f'Failed to write {filename}: {e}')
             
@@ -181,6 +187,7 @@ class FileMenu(QObject):
     def _load_definitions(self):
         #  Load definitions from a database file:
         
+        self._client.unbind_all()
         file = self._getExistingSqliteFilename()
         if file[0] == '':
             return
@@ -220,10 +227,13 @@ class FileMenu(QObject):
         applications = reader.read_applications()
         self._restore_gate_applications(applications)
         
+        bindsets = reader.read_bindsets()
+        bindings_controller.loadBindingGroups(bindsets)
+        
         # Simplest is to unbind all and rebind all:
         
-        self._client.unbind_all()
-        self._client.sbind_all()
+        
+        
         
         
         

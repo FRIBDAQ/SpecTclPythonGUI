@@ -32,8 +32,14 @@ import FilterMenu
 import SpectraMenu
 import GateMenu
 import HelpMenu
+import bindings
+import bindingscontroller
 
 
+def _updateBindableSpectra(index):
+    if index == bindings_tab_index:
+        FileMenu.bindings_controller.updateValidSpectra()
+        
 def setup_menubar(win, client):
     '''
     Sets up the menubar and the menus in it:
@@ -179,11 +185,15 @@ main = QMainWindow()
 
 setTabStyle(app)
 
+tab_num = 0
 tabs = QTabWidget()
 spectrum_view = spectra.SpectrumWidget()
-tabs.addTab(spectrum_view,'Spectra')
+tabs.addTab(spectrum_view,'Spectra')         
+tab_num += 1
+
 param_view= parameditor.ParameterEditor()
-tabs.addTab(param_view, 'Parameters')
+tabs.addTab(param_view, 'Parameters')       
+tab_num += 1
 param_controller = parametercontroller.ParameterController(
     param_view, client, spectrum_view
 )
@@ -193,9 +203,27 @@ if capabilities.get_program() == capabilities.Program.SpecTcl:
     var_view = TreeVariableView()
     var_controller = TreeVariableController(var_view, client)
     tabs.addTab(var_view, 'Variables')
+    tab_num += 1
 condition_view = gates.Gates()
 condition_controller = gates.Controller(condition_view, client)
 tabs.addTab(condition_view, 'Gates')
+tab_num += 1
+
+#  The new tab to handle spectrum binding sets:
+bindings_view = bindings.BindingGroupTab()
+FileMenu.bindings_controller = bindingscontroller.BindingsController(client, bindings_view)
+tabs.addTab(bindings_view, 'BindSets')
+bindings_tab_index = tab_num
+tabs.currentChanged.connect(_updateBindableSpectra)
+tab_num += 1 
+
+# if you add tabs, be sure to update tab_num so that, if necessary a tab can save its tab number.
+#  Note that the tab number below are capability dependent.
+
+# We want to update the available spectra when this tab is selectged:
+
+
+
 
 main.setCentralWidget(tabs)
 

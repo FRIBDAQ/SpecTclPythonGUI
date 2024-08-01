@@ -202,7 +202,14 @@ class SpectrumModel(QStandardItemModel):
         for item in items:      # Deals correctly with no/multiple matches:
             idx = self.indexFromItem(item)
             self.removeRow(idx.row())
-
+    def getNames(self):
+        ''' Return a list of spectrum names '''
+        result=[]
+        for row in range(0, self.rowCount()):
+            item = self.item(row, 0)
+            result.append(item.text())
+        return result
+    
     def _addItem(self, spectrum):
         info = [
             self._item(spectrum['name']),

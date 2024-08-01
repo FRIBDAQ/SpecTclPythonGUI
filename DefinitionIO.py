@@ -228,7 +228,21 @@ class DefinitionWriter:
                        VALUES (:saveid, :name, :value, :units)
                 ''', substitutions)
             self._sqlite.commit()
-               
+    
+    def save_binding_sets(self, definitions):
+        '''
+            Saves the binding sets to the database.
+            definitions is an  iterable whose members are dicts with the keys:
+            'name' - name of the binding set.
+            'description' - description of the binding set.
+            'spectra'  - iterable containing spectrum names:
+            
+            IMPORTANT:  the spectra must have been saved prior to invoking this
+            as the spectra are converted to IDs.
+        '''
+        
+        for definition in definitions:
+            self._save_binding(definition)
     # Private methods    
     def _create_schema(self):
         # Create the databas schema; again see 
@@ -379,6 +393,25 @@ class DefinitionWriter:
                 units          TEXT                   
             )
                              ''')
+        # Define the tables needed to save spectrum binding sets.
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS binding_sets (
+                id            INTEGER PRIMARY KEY,
+                save_id       INTEGER NOT NULL,    -- FK save set id.
+                name          TEXT NOT NULL,
+                description   TEXT DEFAULT NULL
+            )
+        '''
+        )
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS bound_spectra (
+                id    INTEGER PRIMARY KEY,
+                bindset_id INTEGER NOT NULL, -- FK to binding_sets which set.
+                spectrum_id INTEGER NOT NULL -- FK to spectrum_defs spectrum in binding set.
+            )
+        '''
+        )
     def _save_specdef(self, cursor, d):
         # Given a database cursor 'cursor' and spectrum definition 'd', performs the
         # SQL to save that defintiion to file.  Note that it is best if there's a transaction
@@ -617,7 +650,61 @@ class DefinitionWriter:
                   'id': gateid, 'mask': condition['value']  
                 })
             
-    
+    def _save_binding(self, definition):
+        # Utility to save one binding set.
+
+        # Turn the spectrum names into spectrum ids and require that all of them translate:
+        
+        cursor = self._sqlite.cursor()
+        
+        #  This is a bit tricky.. we need the right number of?'s in the IN clause
+        #  hence the wierd stuff in the {} and the formatted string.            
+        cursor.execute(
+            f'''SELECT id FROM spectrum_defs WHERE name IN ({','.join('?'*len(definition['spectra']))})''',
+            definition['spectra']
+        )
+        ids = cursor.fetchall()
+       
+        if len(ids) != len(definition['spectra']):
+            raise LookupError(
+                "At least one spectrum name in a binding list is not in the list of saved spectra"
+            )
+        
+        #  Since there are multiple inserts to defint the binding set
+        #  We start a save point:
+        
+        cursor.execute('SAVEPOINT bindset_save')
+        try:
+            cursor.execute('''
+                INSERT INTO binding_sets (save_id, name, description) 
+                    VALUES(:savid, :name, :description)
+            ''', {'savid': self._saveid, 'name': definition['name'], 'description': definition['description']}
+            )
+        
+            bind_id = cursor.lastrowid         # So we can create the fk
+            
+            # Create the bindings list for the spectrum inserts:
+            
+            bindings = list()
+            for spec in ids:
+                bindings.append({
+                    'bindid': bind_id,
+                    'specid' : spec[0]
+                })
+            cursor.executemany('''
+                INSERT INTO bound_spectra (bindset_id, spectrum_id)
+                    VALUES (:bindid, :specid)
+            ''', bindings)
+        except:
+            cursor.execute('ROLLBACK TRANSACTION TO SAVEPOINT bindset_save')
+            cursor.execute('RELEASE SAVEPOINT bindset_save')
+            self._sqlite.rollback()
+            raise
+        
+        cursor.execute('RELEASE SAVEPOINT bindset_save')
+        self._sqlite.commit()
+        
+        
         
 class DefinitionReader:
     '''
@@ -930,4 +1017,60 @@ class DefinitionReader:
         data = cursor.fetchall()
         
         return [{'spectrum': x[0], 'condition': x[1]} for x in data]
-    
+
+    def read_bindsets(self):
+        '''
+            Reads the binding sets from the database.
+            
+            returns an iteratble of dicts contaning  the keys:
+            'name' - binding set name
+            'description' - binding set description.
+            'spectra' - iterable of spectrum >names<
+            
+            
+        IMPORTANT NOTE:  Early versions of this software did not have binding sets.
+        We therefre check for the existence of both tables and gracefully return
+        an empty iterable if they don't both exist.
+        '''
+        result = list()    
+        cursor = self._sqlite.cursor()
+        
+        # Ensure the tables exist, and only try to populate 'results' if so:
+        
+        cursor.execute('''
+            SELECT COUNT(*) from sqlite_master WHERE name in ('binding_sets', 'bound_spectra')
+        ''', {})
+        count = cursor.fetchall()
+        if count[0][0] == 2:
+                
+            
+            # Get the binding sets for this save set and iterate over them to get the
+            # spectra in the set:
+            
+            cursor.execute('''
+                SELECT id, name, description FROM binding_sets WHERE save_id = :saveid
+            ''', {'saveid' : self._saveid})
+            bindingsets = cursor.fetchall()
+            for bindingset in bindingsets:
+                id = bindingset[0]
+                name = bindingset[1]
+                description = bindingset[2]
+                
+                # Get the names of the spectra:
+                
+                cursor.execute('''
+                    SELECT name FROM spectrum_defs
+                    INNER JOIN bound_spectra on spectrum_defs.id = bound_spectra.spectrum_id
+                    WHERE bindset_id = :bid
+                ''', {'bid': id})
+                spectrum_names = cursor.fetchall()
+                names = list()
+                for spectrum in spectrum_names:
+                    names.append(spectrum[0])
+                result.append({
+                    'name' : name,
+                    'description': description,
+                    'spectra': names
+                }) 
+            
+        return result           
