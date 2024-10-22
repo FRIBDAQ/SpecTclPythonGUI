@@ -13,9 +13,10 @@ Detach - Detach from the data source.
 Abort Cluster File (SpecTcl only later than 5.13-xxx)
 
 '''
+
 from PyQt5.QtWidgets import (
     QAction, QFileDialog, QDialog, QDialogButtonBox, QRadioButton, QPushButton,
-    QLabel, QWidget, QLineEdit,
+    QLabel, QWidget, QLineEdit, QMessageBox,
     QVBoxLayout, QHBoxLayout
 )
 from PyQt5.QtCore import QObject
@@ -25,12 +26,19 @@ import os
 import capabilities
 from spectrumeditor import error, confirm
 from editablelist import EditableList
+from clusterprocessor import ClusterProcessor
 
+#  This constant is the poll interval for checking to see if we are still 
+# Processing a cluster file:
+
+CLUSTER_CHECK_INTERVAL = 2 * 1000    # units of milliseconds.
 
 class DataSourceMenu(QObject):
     def __init__(self, menu, client, gui, *args):
         super().__init__(*args)
         
+        self._cluster_processor = None
+
         # Fill in the items in the menu:
         
         program = capabilities.get_program()
@@ -64,16 +72,20 @@ class DataSourceMenu(QObject):
             self._pipe.triggered.connect(self._attach_pipe)
             self._menu.addAction(self._pipe)
         
-        # This list of stuff is all SpecTcl at this time.
+        # Issue # 6 provide cluster file processing
+        # for all programs.
+        self._menu.addSeparator()
         
-        if program == spectcl:
-            self._menu.addSeparator()
-
-            if capabilities.has_rest_runlist():
-                self._cluster = QAction('Cluster file...', self)
-                self._cluster.triggered.connect(self._attach_cluster)
-                self._menu.addAction(self._cluster)
-                
+        self._cluster = QAction('Cluster file...', self)
+        self._cluster.triggered.connect(self._attach_cluster)
+        self._menu.addAction(self._cluster)
+        
+        self._abort_cluster = QAction('Abort Cluster processing', self)
+        self._abort_cluster.triggered.connect(self._abort_cluster)
+        self._menu.addAction(self._stop_cluster)
+        self._abort_cluster.setEnabled(False)
+        
+        if program == spectcl:    
             self._filter = QAction('Filter file...', self)
             self._filter.triggered.connect(self.attach_filter)
             self._menu.addAction(self._filter)
@@ -93,9 +105,41 @@ class DataSourceMenu(QObject):
         
     
     def _attach_cluster(self):
-        pass
+        global CLUSTER_CHECK_INTERVAL
+        # Prompt for a file.
+        #  Try to create a cluster processor.  If we can:
+        #   Ghost the cluster attacher,
+        #   Unghost the Abort
+        #   Connect the cluster processor's done signal to our _cluster_done
+        #   method.
+        
+        try:
+            cluster_filename = QFileDialog.getOpenFileName(self, "Cluster definition file", '.', "*.clu *" )
+            if cluster_filename != "":
+                self._cluster_processor = ClusterProcessor(cluster_filename, CLUSTER_CHECK_INTERVAL)
+                self._cluster_processor.done.connect(self._cluster_done)
+                self._cluster.setEnabled(False)
+                self._abort_cluster.setEnabled(True)
+            pass
+        except Exception as e:
+            #  Message box:
+            
+            QMessageBox.information(self, 'Failed to start cluster processing', str(e))
+            
     def _stop_cluster(self):
-        pass
+        # If we have a cluster_processor tell it to abort:
+        
+        if self._cluster_processor is not None:
+            self._cluster_processor.abort()
+            
+    def _cluster_done(self):
+        # Slot for cluster processing finished and is idle
+        # Kill off the processor and set the menu item enables appropriately. 
+        self._cluster_processor = None
+        self._cluster.setEnabled(True)
+        self._abort_cluster.setEnabled(False)
+        
+        
     def _read_event_file(self):
         #  Prompt for an event file and 
         # Figure out the possible event file formats:
