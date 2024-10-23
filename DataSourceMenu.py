@@ -109,18 +109,20 @@ class DataSourceMenu(QObject):
         #   Connect the cluster processor's done signal to our _cluster_done
         #   method.
         
+
         try:
-            cluster_filename = QFileDialog.getOpenFileName(self, "Cluster definition file", '.', "*.clu *" )
+            cluster_filename = QFileDialog.getOpenFileName(self._ui, "Cluster definition file", '.',
+                                                           "Cluster Files (*.clu);; All Files (*.*)" )
             if cluster_filename != "":
-                self._cluster_processor = ClusterProcessor(cluster_filename, CLUSTER_CHECK_INTERVAL, self._client)
+                self._cluster_processor = ClusterProcessor(cluster_filename[0], CLUSTER_CHECK_INTERVAL, self._client)
                 self._cluster_processor.done.connect(self._cluster_done)
                 self._cluster.setEnabled(False)
                 self._abort_cluster.setEnabled(True)
-            pass
+           
         except Exception as e:
             #  Message box:
-            
-            QMessageBox.information(self, 'Failed to start cluster processing', str(e))
+            QMessageBox.information(self._ui, 'Failed to start cluster processing', str(e))
+    
             
     def _stop_cluster(self):
         # If we have a cluster_processor tell it to abort:
@@ -273,7 +275,6 @@ If not click 'No' to do something else \
         # Figure out if the filename is a raw event file:
         
         parts = os.path.splitext(filename)
-        print(parts)
         return parts[1] == '.evt'
     
     

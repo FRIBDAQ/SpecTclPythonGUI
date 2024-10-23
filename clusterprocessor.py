@@ -44,15 +44,15 @@ class ClusterProcessor(QTimer):
         with open(cluster_file, "r") as file:
             for line in file:
                 # Check existence:
-                
-                if not path.isFile(line):
+                line = line.strip()   # has the newline char(s)
+                if not path.isfile(line):
                     self._state = 'done'
                     raise SystemError(f'No such event file {line} in cluster file {cluster_file}')
                 
                 #  Add to the list
-                self._event_files.append(line)
-        if len(self._event_files) > 0:
-            self._current_file = self._event_files.pop(0)
+                self.event_files.append(line)
+        if len(self.event_files) > 0:
+            self._current_file = self.event_files.pop(0)
             self._start_event_file(self._current_file)
                 
     def abort(self):
@@ -79,21 +79,25 @@ class ClusterProcessor(QTimer):
         #    if not, emit the done stignal and set the state to done.
         
         if self._state == 'aborting':
+            try:
+                self._client.stop_analysis()
+            except:
+                pass   # Might be done with a file.
+            self._client.detach_source()
             # Abort was requested.
             self._state = 'done'
             self.done.emit()
             return
         
-        vars = client.shmem_getvariables()
+        vars = self._client.shmem_getvariables()['detail']
         if vars['RunState'] == 'Inactive':
             # Finished a file:
-            
             if len(self.event_files) == 0:
                 self._state = 'done'
                 self.done.emit()
             else:
                 # Start the next file:
-                next_file = self._eventfiles.pop(0)
+                next_file = self.event_files.pop(0)
                 self._start_event_file(next_file)
         else:
             self.start(self._poll)
