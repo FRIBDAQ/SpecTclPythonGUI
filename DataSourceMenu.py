@@ -81,8 +81,8 @@ class DataSourceMenu(QObject):
         self._menu.addAction(self._cluster)
         
         self._abort_cluster = QAction('Abort Cluster processing', self)
-        self._abort_cluster.triggered.connect(self._abort_cluster)
-        self._menu.addAction(self._stop_cluster)
+        self._abort_cluster.triggered.connect(self._stop_cluster)
+        self._menu.addAction(self._abort_cluster)
         self._abort_cluster.setEnabled(False)
         
         if program == spectcl:    
@@ -96,11 +96,7 @@ class DataSourceMenu(QObject):
         self._detach.triggered.connect(self._detach_source)
         self._menu.addAction(self._detach)
         
-        if program == spectcl:
-            if capabilities.has_rest_runlist():   # Part of runlist functionality.
-                self._abortlist = QAction('Abort Cluster File')
-                self._abortlist.triggered.connect(self._stop_cluster)
-                self._menu.addAction(self._abortlist)
+        
                                    
         
     
