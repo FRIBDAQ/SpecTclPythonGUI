@@ -9,10 +9,10 @@ is validated (and assumed to be available to the server).
 and used to start the next file.
 
 '''
-from Gui import client
+
 from os import path
-from PyQt5.QtWidgets import QTimer
-from PyQt5.QtCore import pyqtSignal
+
+from PyQt5.QtCore import pyqtSignal, QTimer
 
 
 
@@ -25,7 +25,7 @@ class ClusterProcessor(QTimer):
     '''
     done = pyqtSignal()
     processing = pyqtSignal(str)
-    def __init__(self, cluster_file, poll, *args):
+    def __init__(self, cluster_file, poll, client, *args):
         super().__init__(*args)
     
         self._client = client
