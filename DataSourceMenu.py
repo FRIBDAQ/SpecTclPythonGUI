@@ -116,7 +116,7 @@ class DataSourceMenu(QObject):
         try:
             cluster_filename = QFileDialog.getOpenFileName(self, "Cluster definition file", '.', "*.clu *" )
             if cluster_filename != "":
-                self._cluster_processor = ClusterProcessor(cluster_filename, CLUSTER_CHECK_INTERVAL)
+                self._cluster_processor = ClusterProcessor(cluster_filename, CLUSTER_CHECK_INTERVAL, self._client)
                 self._cluster_processor.done.connect(self._cluster_done)
                 self._cluster.setEnabled(False)
                 self._abort_cluster.setEnabled(True)
