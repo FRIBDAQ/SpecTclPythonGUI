@@ -232,6 +232,43 @@ class SpectrumModel(QStandardItemModel):
             result.append(item.text())
         return result
     
+    def getRow(self, row):
+        # Returns the values of everything in the non button columns of a row.
+        # note if row is out of range, IndexError is rasised.
+        # Return value is an array containing:
+        #  name, type, xparameters, xlow, xhigh, xbins, ylow, yhigh, ybins, gate.
+        #  Note that if an element is empty, it is filled with None
+        #  The low, high, bins are numeric types.  Everything else is a string.
+        
+        if row >= self.rowCount():
+            raise IndexError(f'Row number {row} is out of range.')
+        #  First just get the strings.
+        
+        result = []
+        for c in range(len(self._colheadings)-2) :
+            index = self.index(row, c)
+            text = index.data()
+            if len(text) == 0:
+                text = None
+            result.append(text)
+            
+        # xlow, xhigh, xbins:
+        # Assume all three are there if any are:
+        if result[3] is not None:
+            result[3] = float(result[3])
+            result[4] = float(result[4])
+            result[5] = int(result[5])
+            
+        # ylow, yhigh, ybins:
+        
+        if result[7] is not None:
+            result[7] = float(result[7])
+            result[8] = float(result[8])
+            result[9] = int(result[9])
+        # The result now is strings an Nones for esmpty strings.
+        
+        return result
+    
     def _addItem(self, spectrum):
         info = [
             self._item(spectrum['name']),

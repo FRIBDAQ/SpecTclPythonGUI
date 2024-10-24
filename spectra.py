@@ -170,8 +170,10 @@ class SpectrumWidget(QWidget):
         # Note this destroys and re-creates the table.
         
         print('updating ', row)
+        print("currently", self._spectrumListModel.getRow(row))
     def _reload_spectrum(self, row):
         print("Reloading", row)
+        print("currently", self._spectrumListModel.getRow(row))
     
     def editor(self):
         return self._editor
