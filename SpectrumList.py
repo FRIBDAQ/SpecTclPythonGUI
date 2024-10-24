@@ -38,6 +38,10 @@ import editablelist
 '''  This is the view for spectra - the table that contains the spectra listed.
 '''
 class SpectrumView(QTableView):
+    reload = pyqtSignal(int)   # Clicked reload col row is passed.
+    update = pyqtSignal(int)   # CLicked update col row is passed.
+    UPDATE_COL = 11
+    RESTORE_COL = 12
     def __init__(self, parent=None):
         super().__init__(parent)
         #self.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -45,6 +49,10 @@ class SpectrumView(QTableView):
         self.setEditTriggers(QAbstractItemView.DoubleClicked)
         self._selected_spectra = []
         self._selected_rows = []
+        
+        # Connect to the item clicked signal:
+        
+        self.clicked.connect(self._clicked)
 
     def mouseReleaseEvent(self, e):
         super().mouseReleaseEvent(e)
@@ -66,6 +74,18 @@ class SpectrumView(QTableView):
                 arow.append(self.model().item(row, c).data(Qt.DisplayRole))
             result.append(arow)
         return result
+    
+    def _clicked(self, mIndex):
+        # Processes clicks into reload and update signals or swallows them.
+        # the model index is passsed in>
+        
+        row = mIndex.row()
+        col = mIndex.column()
+        if col == self.UPDATE_COL:
+            self.update.emit(row)
+        if col == self.RESTORE_COL:
+            self.reload.emit(row)
+        
 
 class SpectrumNameList(QListView):
     '''
@@ -166,7 +186,7 @@ class SpectrumModel(QStandardItemModel):
     
     _colheadings = ['Name', 'Type', 
         'XParameter(s)', 'Low', 'High', 'Bins',
-        'YParameter(s)', 'Low', 'High', 'Bins', 'Gate'
+        'YParameter(s)', 'Low', 'High', 'Bins', 'Gate', '', ''
     ]
     def __init__(self, parent = None) :
         super().__init__(parent)
@@ -241,6 +261,9 @@ class SpectrumModel(QStandardItemModel):
         else:
             info.append(self._item(spectrum['gate']))
         
+        # THese are really controls:
+        info.append(self._item('Update'))
+        info.append(self._item('Restore'))
         self.appendRow(info)
 
     def _item(self, s):

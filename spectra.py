@@ -78,6 +78,9 @@ class SpectrumWidget(QWidget):
 
         self._listing.filter_signal.connect(self._filter_list)
         self._listing.clear_signal.connect(self._clear_filter)
+        
+        self._listing.getList().reload.connect(self._reload_spectrum)
+        self._listing.getList().update.connect(self._update_spectrum)
 
     def _add_to_listing(self, new_name):
         # Get the definition:
@@ -160,6 +163,16 @@ class SpectrumWidget(QWidget):
             return
         spectrum = selected[0]
         self._editor.load_editor(spectrum)
+    
+    def _update_spectrum(self, row):
+        # Handle update clicks.  the spectsrum definition
+        # is read and the binning updated from the table values.
+        # Note this destroys and re-creates the table.
+        
+        print('updating ', row)
+    def _reload_spectrum(self, row):
+        print("Reloading", row)
+    
     def editor(self):
         return self._editor
 
