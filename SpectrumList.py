@@ -29,7 +29,7 @@ from PyQt5.QtWidgets import (
     QPushButton, QLineEdit, QAbstractItemView, QListView
 )
 from PyQt5.QtCore import pyqtSignal, Qt
-from PyQt5.QtGui import QStandardItemModel, QStandardItem
+from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor
 
 from rustogramer_client import rustogramer
 import editablelist
@@ -262,8 +262,12 @@ class SpectrumModel(QStandardItemModel):
             info.append(self._item(spectrum['gate']))
         
         # THese are really controls:
-        info.append(self._item('Update'))
-        info.append(self._item('Restore'))
+        up = self._item('Update')
+        up.setData(QColor(Qt.lightGray), Qt.BackgroundColorRole)
+        info.append(up)
+        res = self._item("Restore")
+        res.setData(QColor(Qt.lightGray), Qt.BackgroundColorRole)
+        info.append(res)
         self.appendRow(info)
 
     def _item(self, s):
