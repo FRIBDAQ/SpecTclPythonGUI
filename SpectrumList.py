@@ -40,16 +40,18 @@ import editablelist
 class SpectrumView(QTableView):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setSelectionBehavior(QAbstractItemView.SelectRows)
+        #self.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.setEditTriggers(QAbstractItemView.DoubleClicked)
         self._selected_spectra = []
         self._selected_rows = []
 
     def mouseReleaseEvent(self, e):
         super().mouseReleaseEvent(e)
         self._selected_spectra = [x.data() for x in self.selectedIndexes() if x.column() == 0]
-        self._selected_rows = [x.row() for x in self.selectedIndexes() if x.column() == 0]
+        self._selected_rows = [x.row() for x in self.selectedIndexes() ]
+        self._selected_rows = set(self._selected_rows)
+        self._selected_spectra = [self.model().item(r, 0).data(Qt.DisplayRole) for r in self._selected_rows]
         
     def getSelectedSpectra(self):
         return self._selected_spectra
@@ -218,18 +220,18 @@ class SpectrumModel(QStandardItemModel):
 
         ]
         if spectrum['xaxis'] is not None:
-            info.append(self._item(str(spectrum['xaxis']['low'])))
-            info.append(self._item(str(spectrum['xaxis']['high'])))
-            info.append(self._item(str(spectrum['xaxis']['bins'])))
+            info.append(self._editableItem(str(spectrum['xaxis']['low'])))
+            info.append(self._editableItem(str(spectrum['xaxis']['high'])))
+            info.append(self._editableItem(str(spectrum['xaxis']['bins'])))
         else :
             info.append(self._item(''))
             info.append(self._item(''))
             info.append(self._item(''))
         info.append(self._item(','.join(spectrum['yparameters'])))
         if spectrum['yaxis'] is not None:
-            info.append(self._item(str(spectrum['yaxis']['low'])))
-            info.append(self._item(str(spectrum['yaxis']['high'])))
-            info.append(self._item(str(spectrum['yaxis']['bins'])))
+            info.append(self._editableItem(str(spectrum['yaxis']['low'])))
+            info.append(self._editableItem(str(spectrum['yaxis']['high'])))
+            info.append(self._editableItem(str(spectrum['yaxis']['bins'])))
         else :
             info.append(self._item(''))
             info.append(self._item(''))
@@ -244,6 +246,10 @@ class SpectrumModel(QStandardItemModel):
     def _item(self, s):
         result = QStandardItem(s)  
         result.setEditable(False)
+        return result
+    def _editableItem(self, s):
+        result = QStandardItem(s)
+        result.setEditable(True)
         return result
     
 
