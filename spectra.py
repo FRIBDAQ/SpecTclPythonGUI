@@ -169,11 +169,44 @@ class SpectrumWidget(QWidget):
         # is read and the binning updated from the table values.
         # Note this destroys and re-creates the table.
         
-        print('updating ', row)
-        print("currently", self._spectrumListModel.getRow(row))
+        newdef = self._spectrumListModel.getRow(row)
+        print(f'replacing {row}')
+        print("with ", newdef)
+        # what we do is very spectrum type dependent but we will
+        # need to delete the old specturm:
+        
+        name = newdef[0]
+        type = newdef[1]
+        chtype = self._editor.channeltype_string()
+        
+        if type == '1':
+            _client.spectrum_delete(name)
+            _client.spectrum_create1d(name, newdef[2], newdef[3], newdef[4], newdef[5], chtype)
+        elif type == '2':
+            _client.spectrum_delete(name)
+            _client.spectrum_create2d(name, newdef[2], newdef[6], 
+                newdef[3], newdef[4], newdef[5], newdef[7], newdef[8], newdef[9], chtype
+            )
+        else:
+            # Unsupported...just reload what it is now.
+            self._reload_spectrum(self, row)
+        
     def _reload_spectrum(self, row):
-        print("Reloading", row)
-        print("currently", self._spectrumListModel.getRow(row))
+        current = self._spectrumListModel.getRow(row)
+        
+        # Get the name of the spectrum ask for its properties and then load it back into that row:
+        
+        name = current[0]
+        info = _client.spectrum_list(name)['detail']
+        
+        # It's remotely possible (multi clients) the spectrum was deleted - in which update
+        # since the whole world could have shifted beneath us:
+        
+        if len(info) == 0:
+            self._filter_list(self._listing.mask())   
+        else:
+            self._spectrumListModel.replaceRow(row, info[0])
+        
     
     def editor(self):
         return self._editor
