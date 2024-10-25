@@ -244,10 +244,19 @@ class SpectrumWidget(QWidget):
                 
                 _client.spectrum_delete(name)
                 _client.spectrum_createstripchart(name, tpar, ypar, newdef[3], newdef[4], newdef[5], chtype)
-            # bitmask
-            # gsummary
+            # bitmask need spectcl fix.
+            
+            
+            elif type == 'gs':
+                parameters = newdef[2].split(',')  # Axis paramteer lists are comma separated.
+                params = []
+                for p in parameters:
+                    params.append(p.split(' '))  # parameters within a y chan are space separated
+                    
+                _client.spectrum_delete(name)
+                _client.spectrum_creategammasummary(name, params, newdef[7], newdef[8], newdef[9], chtype)
             else:
-                # Unsupported...just reload what it is now.
+                # Unsupported just reloads.
                 self._reload_spectrum(row)
         except RustogramerException as e:
             QMessageBox.warning(
