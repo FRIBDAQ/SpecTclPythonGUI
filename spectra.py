@@ -226,6 +226,16 @@ class SpectrumWidget(QWidget):
                 
                 _client.spectrum_delete(name)
                 _client.spectrum_createsummary(name, parameters, newdef[7], newdef[8], newdef[9], chtype)
+            elif type == 'm2':
+                parameters = newdef[2].split(',')
+                xpars = [x.strip() for x in parameters]
+                parameters = newdef[6].split(',')
+                ypars = [x.strip() for x in parameters]
+                
+                _client.spectrum_delete(name)
+                _client.spectrum_create2dsum(name, xpars, ypars, 
+                    newdef[3], newdef[4], newdef[5], newdef[7], newdef[8], newdef[9], chtype
+                )
             else:
                 # Unsupported...just reload what it is now.
                 self._reload_spectrum(row)
