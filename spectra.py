@@ -186,6 +186,8 @@ class SpectrumWidget(QWidget):
         
         name = newdef[0]
         type = newdef[1]
+        olddef = _client.spectrum_list(name)['detail']
+        print("Old definition", olddef)
         chtype = self._editor.channeltype_string()
         try:
             if type == '1':
@@ -240,10 +242,25 @@ class SpectrumWidget(QWidget):
                 # Unsupported...just reload what it is now.
                 self._reload_spectrum(row)
         except RustogramerException as e:
-            QMessageBox.warning(self, 'Unable to replace spectrum', f'{e}  Original spectrum may be deleted')
+            QMessageBox.warning(
+                self, 'Unable to replace spectrum',
+                f'{e}  Original spectrum may have been deleted'
+            )
             self._filter_list(self._listing.mask())    # So the spectrum vanishes if it did.
             return     # In  case more code is added below.
-            
+        # Try to apply any old gate to the new spectrum
+        
+        if newdef[10] is not None:
+            try:
+                _client.apply_gate(newdef[10], name)
+            except RustogramerException as  e:
+                QMessageBox.warning(
+                    self, 'Unable to regate spectrum',
+                    f'Unable to re-establish gate on {name}: {e}, {name} will be ungated.'
+                )
+                self._filter_list(self._listing.mask())
+                
+                # IF there's more codee, can continue.
         
     def _reload_spectrum(self, row):
         current = self._spectrumListModel.getRow(row)
