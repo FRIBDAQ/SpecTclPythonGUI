@@ -220,6 +220,12 @@ class SpectrumWidget(QWidget):
                 _client.spectrum_creategd(name, xpars, ypars,
                     newdef[3], newdef[4], newdef[5], newdef[7], newdef[8], newdef[9], chtype
                 )
+            elif type == 's':
+                parameters = newdef[2].split(',')
+                parameters = [x.strip() for x in parameters]
+                
+                _client.spectrum_delete(name)
+                _client.spectrum_createsummary(name, parameters, newdef[7], newdef[8], newdef[9], chtype)
             else:
                 # Unsupported...just reload what it is now.
                 self._reload_spectrum(row)
