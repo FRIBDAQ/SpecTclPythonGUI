@@ -206,11 +206,20 @@ class SpectrumWidget(QWidget):
             elif type == 'g2':
                 # There's really only one parameters list even though it shows as x and y:
             
-                parameters = newdef[2].split(',')
-                parameters = [x.strip() for x in parameters]
+                
                 _client.spectrum_delete(name)
                 _client.spectrum_createg2(name, parameters,
                     newdef[3], newdef[4], newdef[5], newdef[7], newdef[8], newdef[9], chtype)
+            elif type == 'gd':
+                parameters = newdef[2].split(',')
+                xpars = [x.strip() for x in parameters]
+                parameters = newdef[6].split(',')
+                ypars = [x.strip() for x in parameters]
+                
+                _client.spectrum_delete(name)
+                _client.spectrum_creategd(name, xpars, ypars,
+                    newdef[3], newdef[4], newdef[5], newdef[7], newdef[8], newdef[9], chtype
+                )
             else:
                 # Unsupported...just reload what it is now.
                 self._reload_spectrum(row)
