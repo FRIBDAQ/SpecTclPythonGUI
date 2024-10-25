@@ -23,6 +23,7 @@ from capabilities import set_client as set_cap_client
 from ParameterChooser import update_model as load_parameters
 from gatelist import common_condition_model
 from  rustogramer_client import rustogramer as RClient
+from rustogramer_client import RustogramerException
 _client = None
 
 def set_client(c):
@@ -186,33 +187,38 @@ class SpectrumWidget(QWidget):
         name = newdef[0]
         type = newdef[1]
         chtype = self._editor.channeltype_string()
-        
-        if type == '1':
-            _client.spectrum_delete(name)
-            _client.spectrum_create1d(name, newdef[2], newdef[3], newdef[4], newdef[5], chtype)
-        elif type == '2':
-            _client.spectrum_delete(name)
-            _client.spectrum_create2d(name, newdef[2], newdef[6], 
-                newdef[3], newdef[4], newdef[5], newdef[7], newdef[8], newdef[9], chtype
-            )
-        elif type == 'g1':
-            # Construct the parameters list - strip leading/trailing whitespace, just in case.
-            parameters = newdef[2].split(',')
-            parameters = [x.strip() for x in parameters]
+        try:
+            if type == '1':
+                _client.spectrum_delete(name)
+                _client.spectrum_create1d(name, newdef[2], newdef[3], newdef[4], newdef[5], chtype)
+            elif type == '2':
+                _client.spectrum_delete(name)
+                _client.spectrum_create2d(name, newdef[2], newdef[6], 
+                    newdef[3], newdef[4], newdef[5], newdef[7], newdef[8], newdef[9], chtype
+                )
+            elif type == 'g1':
+                # Construct the parameters list - strip leading/trailing whitespace, just in case.
+                parameters = newdef[2].split(',')
+                parameters = [x.strip() for x in parameters]
+                
+                _client.spectrum_delete(name)
+                _client.spectrum_createg1(name, parameters, newdef[3], newdef[4], newdef[5], chtype)
+            elif type == 'g2':
+                # There's really only one parameters list even though it shows as x and y:
             
-            _client.spectrum_delete(name)
-            _client.spectrum_createg1(name, parameters, newdef[3], newdef[4], newdef[5], chtype)
-        elif type == 'g2':
-            # There's really only one parameters list even though it shows as x and y:
-        
-            parameters = newdef[2].split(',')
-            parameters = [x.strip() for x in parameters]
-            _client.spectrum_delete(name)
-            _client.spectrum_createg2(name, parameters,
-                newdef[3], newdef[4], newdef[5], newdef[7], newdef[8], newdef[9], chtype)
-        else:
-            # Unsupported...just reload what it is now.
-            self._reload_spectrum(row)
+                parameters = newdef[2].split(',')
+                parameters = [x.strip() for x in parameters]
+                _client.spectrum_delete(name)
+                _client.spectrum_createg2(name, parameters,
+                    newdef[3], newdef[4], newdef[5], newdef[7], newdef[8], newdef[9], chtype)
+            else:
+                # Unsupported...just reload what it is now.
+                self._reload_spectrum(row)
+        except RustogramerException as e:
+            QMessageBox.warning(self, 'Unable to replace spectrum', f'{e}  Original spectrum may be deleted')
+            self._filter_list(self._listing.mask())    # So the spectrum vanishes if it did.
+            return     # In  case more code is added below.
+            
         
     def _reload_spectrum(self, row):
         current = self._spectrumListModel.getRow(row)
