@@ -29,7 +29,7 @@ from PyQt5.QtWidgets import (
     QPushButton, QLineEdit, QAbstractItemView, QListView
 )
 from PyQt5.QtCore import pyqtSignal, Qt
-from PyQt5.QtGui import QStandardItemModel, QStandardItem
+from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor
 
 from rustogramer_client import rustogramer
 import editablelist
@@ -38,18 +38,28 @@ import editablelist
 '''  This is the view for spectra - the table that contains the spectra listed.
 '''
 class SpectrumView(QTableView):
+    reload = pyqtSignal(int)   # Clicked reload col row is passed.
+    update = pyqtSignal(int)   # CLicked update col row is passed.
+    UPDATE_COL = 11
+    RESTORE_COL = 12
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setSelectionBehavior(QAbstractItemView.SelectRows)
+        #self.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.setEditTriggers(QAbstractItemView.DoubleClicked)
         self._selected_spectra = []
         self._selected_rows = []
+        
+        # Connect to the item clicked signal:
+        
+        self.clicked.connect(self._clicked)
 
     def mouseReleaseEvent(self, e):
         super().mouseReleaseEvent(e)
         self._selected_spectra = [x.data() for x in self.selectedIndexes() if x.column() == 0]
-        self._selected_rows = [x.row() for x in self.selectedIndexes() if x.column() == 0]
+        self._selected_rows = [x.row() for x in self.selectedIndexes() ]
+        self._selected_rows = set(self._selected_rows)
+        self._selected_spectra = [self.model().item(r, 0).data(Qt.DisplayRole) for r in self._selected_rows]
         
     def getSelectedSpectra(self):
         return self._selected_spectra
@@ -64,6 +74,18 @@ class SpectrumView(QTableView):
                 arow.append(self.model().item(row, c).data(Qt.DisplayRole))
             result.append(arow)
         return result
+    
+    def _clicked(self, mIndex):
+        # Processes clicks into reload and update signals or swallows them.
+        # the model index is passsed in>
+        
+        row = mIndex.row()
+        col = mIndex.column()
+        if col == self.UPDATE_COL:
+            self.update.emit(row)
+        if col == self.RESTORE_COL:
+            self.reload.emit(row)
+        
 
 class SpectrumNameList(QListView):
     '''
@@ -164,7 +186,7 @@ class SpectrumModel(QStandardItemModel):
     
     _colheadings = ['Name', 'Type', 
         'XParameter(s)', 'Low', 'High', 'Bins',
-        'YParameter(s)', 'Low', 'High', 'Bins', 'Gate'
+        'YParameter(s)', 'Low', 'High', 'Bins', 'Gate', '', ''
     ]
     def __init__(self, parent = None) :
         super().__init__(parent)
@@ -210,6 +232,94 @@ class SpectrumModel(QStandardItemModel):
             result.append(item.text())
         return result
     
+    def getRow(self, row):
+        # Returns the values of everything in the non button columns of a row.
+        # note if row is out of range, IndexError is rasised.
+        # Return value is an array containing:
+        #  name, type, xparameters, xlow, xhigh, xbins, ylow, yhigh, ybins, gate.
+        #  Note that if an element is empty, it is filled with None
+        #  The low, high, bins are numeric types.  Everything else is a string.
+        
+        if row >= self.rowCount():
+            raise IndexError(f'Row number {row} is out of range.')
+        #  First just get the strings.
+        
+        result = []
+        for c in range(len(self._colheadings)-2) :
+            index = self.index(row, c)
+            text = index.data()
+            if len(text) == 0:
+                text = None
+            result.append(text)
+        
+        
+        
+        # xlow, xhigh, xbins:
+        # Assume all three are there if any are:
+        if result[3] is not None:
+            result[3] = float(result[3])
+            result[4] = float(result[4])
+            result[5] = int(result[5])
+            
+        # ylow, yhigh, ybins:
+        
+        if result[7] is not None:
+            result[7] = float(result[7])
+            result[8] = float(result[8])
+            result[9] = int(result[9])
+        # The result now is strings an Nones for esmpty strings.
+        
+        return result
+    
+    
+    def replaceRow(self, row, definition):
+        # While this is generally called to replace the row's axis binning defs, we'll allow it
+        # to replace the contents of the whole row.
+        
+        # name and type:
+        
+        self._replaceItem(row, 0, definition['name'])
+        self._replaceItem(row, 1, definition ['type'])
+        self._replaceItem(row, 2, ','.join(definition['xparameters']))
+        
+        low = str()
+        high = str()
+        bins = str()
+        
+        # X binning might not exist.
+        
+        if definition['xaxis'] is not None:
+            low = str(definition ['xaxis']['low'])
+            high = str(definition['xaxis']['high'])
+            bins = str(definition['xaxis']['bins'])
+        else:
+            low = ''
+            high = ''
+            bins = ''
+        self._replaceItem(row, 3, low)
+        self._replaceItem(row, 4, high)
+        self._replaceItem(row, 5, bins)
+                                               
+        self._replaceItem(row, 6, ','.join(definition['yparameters']))
+        
+        if definition['yaxis'] is not None:
+            low = str(definition ['yaxis']['low'])
+            high = str(definition['yaxis']['high'])
+            bins = str(definition['yaxis']['bins'])
+        else:
+            low = ''
+            high = ''
+            bins = ''
+        self._replaceItem(row, 7, low)
+        self._replaceItem(row, 8, high)
+        self._replaceItem(row, 9, bins)
+        
+        gate = definition['gate']
+        if gate is None:
+            gate = ''
+        self._replaceItem(row, 10, gate)
+        
+        
     def _addItem(self, spectrum):
         info = [
             self._item(spectrum['name']),
@@ -218,18 +328,18 @@ class SpectrumModel(QStandardItemModel):
 
         ]
         if spectrum['xaxis'] is not None:
-            info.append(self._item(str(spectrum['xaxis']['low'])))
-            info.append(self._item(str(spectrum['xaxis']['high'])))
-            info.append(self._item(str(spectrum['xaxis']['bins'])))
+            info.append(self._editableItem(str(spectrum['xaxis']['low'])))
+            info.append(self._editableItem(str(spectrum['xaxis']['high'])))
+            info.append(self._editableItem(str(spectrum['xaxis']['bins'])))
         else :
             info.append(self._item(''))
             info.append(self._item(''))
             info.append(self._item(''))
         info.append(self._item(','.join(spectrum['yparameters'])))
         if spectrum['yaxis'] is not None:
-            info.append(self._item(str(spectrum['yaxis']['low'])))
-            info.append(self._item(str(spectrum['yaxis']['high'])))
-            info.append(self._item(str(spectrum['yaxis']['bins'])))
+            info.append(self._editableItem(str(spectrum['yaxis']['low'])))
+            info.append(self._editableItem(str(spectrum['yaxis']['high'])))
+            info.append(self._editableItem(str(spectrum['yaxis']['bins'])))
         else :
             info.append(self._item(''))
             info.append(self._item(''))
@@ -239,12 +349,26 @@ class SpectrumModel(QStandardItemModel):
         else:
             info.append(self._item(spectrum['gate']))
         
+        # THese are really controls:
+        up = self._item('Update')
+        up.setData(QColor(Qt.lightGray), Qt.BackgroundColorRole)
+        info.append(up)
+        res = self._item("Restore")
+        res.setData(QColor(Qt.lightGray), Qt.BackgroundColorRole)
+        info.append(res)
         self.appendRow(info)
 
     def _item(self, s):
         result = QStandardItem(s)  
         result.setEditable(False)
         return result
+    def _editableItem(self, s):
+        result = QStandardItem(s)
+        result.setEditable(True)
+        return result
+    def _replaceItem(self, row, col, text):
+        
+        self.setData(self.index(row, col), text, Qt.DisplayRole)
     
 
 # A widget for selecting spectra from a SpectrumNameList:

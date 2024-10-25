@@ -23,6 +23,7 @@ from capabilities import set_client as set_cap_client
 from ParameterChooser import update_model as load_parameters
 from gatelist import common_condition_model
 from  rustogramer_client import rustogramer as RClient
+from rustogramer_client import RustogramerException
 _client = None
 
 def set_client(c):
@@ -78,6 +79,9 @@ class SpectrumWidget(QWidget):
 
         self._listing.filter_signal.connect(self._filter_list)
         self._listing.clear_signal.connect(self._clear_filter)
+        
+        self._listing.getList().reload.connect(self._reload_spectrum)
+        self._listing.getList().update.connect(self._update_spectrum)
 
     def _add_to_listing(self, new_name):
         # Get the definition:
@@ -160,6 +164,140 @@ class SpectrumWidget(QWidget):
             return
         spectrum = selected[0]
         self._editor.load_editor(spectrum)
+    
+    def _update_spectrum(self, row):
+        
+        
+        # Handle update clicks.  the spectsrum definition
+        # is read and the binning updated from the table values.
+        # Note this destroys and re-creates the table.
+        
+        try:
+            newdef = self._spectrumListModel.getRow(row)
+        except:
+            QMessageBox.warning(self, 'Bad axis specifications',
+                'One of the axis specifications is not numeric fix that and click update again.'
+            )
+            return
+       
+        # what we do is very spectrum type dependent but we will
+        # need to delete the old specturm:
+        
+        name = newdef[0]
+        type = newdef[1]
+        olddef = _client.spectrum_list(name)['detail']
+    
+        chtype = self._editor.channeltype_string()
+        try:
+            if type == '1':
+                _client.spectrum_delete(name)
+                _client.spectrum_create1d(name, newdef[2], newdef[3], newdef[4], newdef[5], chtype)
+            elif type == '2':
+                _client.spectrum_delete(name)
+                _client.spectrum_create2d(name, newdef[2], newdef[6], 
+                    newdef[3], newdef[4], newdef[5], newdef[7], newdef[8], newdef[9], chtype
+                )
+            elif type == 'g1':
+                # Construct the parameters list - strip leading/trailing whitespace, just in case.
+                parameters = newdef[2].split(',')
+                parameters = [x.strip() for x in parameters]
+                
+                _client.spectrum_delete(name)
+                _client.spectrum_createg1(name, parameters, newdef[3], newdef[4], newdef[5], chtype)
+            elif type == 'g2':
+                # There's really only one parameters list even though it shows as x and y:
+            
+                
+                _client.spectrum_delete(name)
+                _client.spectrum_createg2(name, parameters,
+                    newdef[3], newdef[4], newdef[5], newdef[7], newdef[8], newdef[9], chtype)
+            elif type == 'gd':
+                parameters = newdef[2].split(',')
+                xpars = [x.strip() for x in parameters]
+                parameters = newdef[6].split(',')
+                ypars = [x.strip() for x in parameters]
+                
+                _client.spectrum_delete(name)
+                _client.spectrum_creategd(name, xpars, ypars,
+                    newdef[3], newdef[4], newdef[5], newdef[7], newdef[8], newdef[9], chtype
+                )
+            elif type == 's':
+                parameters = newdef[2].split(',')
+                parameters = [x.strip() for x in parameters]
+                
+                _client.spectrum_delete(name)
+                _client.spectrum_createsummary(name, parameters, newdef[7], newdef[8], newdef[9], chtype)
+            elif type == 'm2':
+                parameters = newdef[2].split(',')
+                xpars = [x.strip() for x in parameters]
+                parameters = newdef[6].split(',')
+                ypars = [x.strip() for x in parameters]
+                
+                _client.spectrum_delete(name)
+                _client.spectrum_create2dsum(name, xpars, ypars, 
+                    newdef[3], newdef[4], newdef[5], newdef[7], newdef[8], newdef[9], chtype
+                )
+            elif type == 'S':
+                tpar = newdef[2]
+                ypar = newdef[6]
+                
+                _client.spectrum_delete(name)
+                _client.spectrum_createstripchart(name, tpar, ypar, newdef[3], newdef[4], newdef[5], chtype)
+            elif type == 'b':
+                param = newdef[2].strip()
+                _client.spectrum_delete(name)
+                _client.spectrum_createbitmask(name, param,  newdef[5], chtype)
+            
+            elif type == 'gs':
+                parameters = newdef[2].split(',')  # Axis paramteer lists are comma separated.
+                params = []
+                for p in parameters:
+                    params.append(p.split(' '))  # parameters within a y chan are space separated
+                    
+                _client.spectrum_delete(name)
+                _client.spectrum_creategammasummary(name, params, newdef[7], newdef[8], newdef[9], chtype)
+            else:
+                # Unsupported just reloads.
+                self._reload_spectrum(row)
+        except RustogramerException as e:
+            QMessageBox.warning(
+                self, 'Unable to replace spectrum',
+                f'{e}  Original spectrum may have been deleted'
+            )
+            self._filter_list(self._listing.mask())    # So the spectrum vanishes if it did.
+            return     # In  case more code is added below.
+        # Try to apply any old gate to the new spectrum
+        #  Note differences between rustogrammer and SpecTcl for ungated spectra.
+        
+        if newdef[10] is not None and newdef[10] != '-TRUE-':
+            try:
+                _client.apply_gate(newdef[10], name)
+            except RustogramerException as  e:
+                QMessageBox.warning(
+                    self, 'Unable to regate spectrum',
+                    f'Unable to re-establish gate on {name}: {e}, {name} will be ungated.'
+                )
+                self._filter_list(self._listing.mask())
+                
+                # IF there's more codee, can continue.
+        
+    def _reload_spectrum(self, row):
+        current = self._spectrumListModel.getRow(row)
+        
+        # Get the name of the spectrum ask for its properties and then load it back into that row:
+        
+        name = current[0]
+        info = _client.spectrum_list(name)['detail']
+        
+        # It's remotely possible (multi clients) the spectrum was deleted - in which update
+        # since the whole world could have shifted beneath us:
+        
+        if len(info) == 0:
+            self._filter_list(self._listing.mask())   
+        else:
+            self._spectrumListModel.replaceRow(row, info[0])
+        
+    
     def editor(self):
         return self._editor
 
