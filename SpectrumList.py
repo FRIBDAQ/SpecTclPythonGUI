@@ -251,7 +251,9 @@ class SpectrumModel(QStandardItemModel):
             if len(text) == 0:
                 text = None
             result.append(text)
-            
+        
+        
+        
         # xlow, xhigh, xbins:
         # Assume all three are there if any are:
         if result[3] is not None:

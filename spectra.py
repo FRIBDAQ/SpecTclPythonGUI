@@ -165,11 +165,19 @@ class SpectrumWidget(QWidget):
         self._editor.load_editor(spectrum)
     
     def _update_spectrum(self, row):
+        
+        
         # Handle update clicks.  the spectsrum definition
         # is read and the binning updated from the table values.
         # Note this destroys and re-creates the table.
         
-        newdef = self._spectrumListModel.getRow(row)
+        try:
+            newdef = self._spectrumListModel.getRow(row)
+        except:
+            QMessageBox.warning(self, 'Bad axis specifications',
+                'One of the axis specifications is not numeric fix that and click update again.'
+            )
+            return
         print(f'replacing {row}')
         print("with ", newdef)
         # what we do is very spectrum type dependent but we will
@@ -187,9 +195,24 @@ class SpectrumWidget(QWidget):
             _client.spectrum_create2d(name, newdef[2], newdef[6], 
                 newdef[3], newdef[4], newdef[5], newdef[7], newdef[8], newdef[9], chtype
             )
+        elif type == 'g1':
+            # Construct the parameters list - strip leading/trailing whitespace, just in case.
+            parameters = newdef[2].split(',')
+            parameters = [x.strip() for x in parameters]
+            
+            _client.spectrum_delete(name)
+            _client.spectrum_createg1(name, parameters, newdef[3], newdef[4], newdef[5], chtype)
+        elif type == 'g2':
+            # There's really only one parameters list even though it shows as x and y:
+        
+            parameters = newdef[2].split(',')
+            parameters = [x.strip() for x in parameters]
+            _client.spectrum_delete(name)
+            _client.spectrum_createg2(name, parameters,
+                newdef[3], newdef[4], newdef[5], newdef[7], newdef[8], newdef[9], chtype)
         else:
             # Unsupported...just reload what it is now.
-            self._reload_spectrum(self, row)
+            self._reload_spectrum(row)
         
     def _reload_spectrum(self, row):
         current = self._spectrumListModel.getRow(row)
