@@ -179,15 +179,14 @@ class SpectrumWidget(QWidget):
                 'One of the axis specifications is not numeric fix that and click update again.'
             )
             return
-        print(f'replacing {row}')
-        print("with ", newdef)
+       
         # what we do is very spectrum type dependent but we will
         # need to delete the old specturm:
         
         name = newdef[0]
         type = newdef[1]
         olddef = _client.spectrum_list(name)['detail']
-        print("Old definition", olddef)
+    
         chtype = self._editor.channeltype_string()
         try:
             if type == '1':
@@ -244,8 +243,10 @@ class SpectrumWidget(QWidget):
                 
                 _client.spectrum_delete(name)
                 _client.spectrum_createstripchart(name, tpar, ypar, newdef[3], newdef[4], newdef[5], chtype)
-            # bitmask need spectcl fix.
-            
+            elif type == 'b':
+                param = newdef[2].strip()
+                _client.spectrum_delete(name)
+                _client.spectrum_createbitmask(name, param,  newdef[5], chtype)
             
             elif type == 'gs':
                 parameters = newdef[2].split(',')  # Axis paramteer lists are comma separated.
