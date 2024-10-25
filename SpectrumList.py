@@ -269,6 +269,55 @@ class SpectrumModel(QStandardItemModel):
         
         return result
     
+    
+    def replaceRow(self, row, definition):
+        # While this is generally called to replace the row's axis binning defs, we'll allow it
+        # to replace the contents of the whole row.
+        
+        # name and type:
+        
+        self._replaceItem(row, 0, definition['name'])
+        self._replaceItem(row, 1, definition ['type'])
+        self._replaceItem(row, 2, ','.join(definition['xparameters']))
+        
+        low = str()
+        high = str()
+        bins = str()
+        
+        # X binning might not exist.
+        
+        if definition['xaxis'] is not None:
+            low = str(definition ['xaxis']['low'])
+            high = str(definition['xaxis']['high'])
+            bins = str(definition['xaxis']['bins'])
+        else:
+            low = ''
+            high = ''
+            bins = ''
+        self._replaceItem(row, 3, low)
+        self._replaceItem(row, 4, high)
+        self._replaceItem(row, 5, bins)
+                                               
+        self._replaceItem(row, 6, ','.join(definition['yparameters']))
+        
+        if definition['yaxis'] is not None:
+            low = str(definition ['yaxis']['low'])
+            high = str(definition['yaxis']['high'])
+            bins = str(definition['yaxis']['bins'])
+        else:
+            low = ''
+            high = ''
+            bins = ''
+        self._replaceItem(row, 7, low)
+        self._replaceItem(row, 8, high)
+        self._replaceItem(row, 9, bins)
+        
+        gate = definition['gate']
+        if gate is None:
+            gate = ''
+        self._replaceItem(row, 10, gate)
+        
+        
     def _addItem(self, spectrum):
         info = [
             self._item(spectrum['name']),
@@ -315,6 +364,9 @@ class SpectrumModel(QStandardItemModel):
         result = QStandardItem(s)
         result.setEditable(True)
         return result
+    def _replaceItem(self, row, col, text):
+        
+        self.setData(self.index(row, col), text, Qt.DisplayRole)
     
 
 # A widget for selecting spectra from a SpectrumNameList:
