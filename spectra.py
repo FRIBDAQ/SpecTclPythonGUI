@@ -238,6 +238,14 @@ class SpectrumWidget(QWidget):
                 _client.spectrum_create2dsum(name, xpars, ypars, 
                     newdef[3], newdef[4], newdef[5], newdef[7], newdef[8], newdef[9], chtype
                 )
+            elif type == 'S':
+                tpar = newdef[2]
+                ypar = newdef[6]
+                
+                _client.spectrum_delete(name)
+                _client.spectrum_createstripchart(name, tpar, ypar, newdef[3], newdef[4], newdef[5], chtype)
+            # bitmask
+            # gsummary
             else:
                 # Unsupported...just reload what it is now.
                 self._reload_spectrum(row)
@@ -249,8 +257,9 @@ class SpectrumWidget(QWidget):
             self._filter_list(self._listing.mask())    # So the spectrum vanishes if it did.
             return     # In  case more code is added below.
         # Try to apply any old gate to the new spectrum
+        #  Note differences between rustogrammer and SpecTcl for ungated spectra.
         
-        if newdef[10] is not None:
+        if newdef[10] is not None and newdef[10] != '-TRUE-':
             try:
                 _client.apply_gate(newdef[10], name)
             except RustogramerException as  e:
