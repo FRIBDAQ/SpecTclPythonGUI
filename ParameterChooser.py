@@ -21,6 +21,7 @@ from rustogramer_client import rustogramer
 import TreeMaker as tm
 
 _parameter_model = QStandardItemModel()
+_parameter_names = []
 
 
 #  These are shamelessly stolen from ParameterChooser and ComboTree:
@@ -38,9 +39,11 @@ def _subtree(top, children):
 
 def update_model(client):
     global _parameter_model
+    global _parameter_names
     _parameter_model.clear()
     parameters = client.parameter_list()
     names = [x['name'] for x in parameters['detail']]
+    _parameter_names = names
     names.sort()
     tree = tm.make_tree(names)
     for key in tree:
@@ -48,6 +51,9 @@ def update_model(client):
         _subtree(top, tree[key])
         _parameter_model.appendRow(top)
 
+def parameters():
+    global _parameter_names
+    return _parameter_names
 
 class Chooser(ComboTree):
     def __init__(self, *args):
