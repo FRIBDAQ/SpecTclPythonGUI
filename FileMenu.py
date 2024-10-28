@@ -577,8 +577,16 @@ class FileMenu(QObject):
                 pass                          # Should be 2.
         # make the applications:
         
+        fails = []
         for app in apps:
-            self._client.apply_gate(app['condition'], app['spectrum'])
+            try:
+                self._client.apply_gate(app['condition'], app['spectrum'])
+            except:
+                fails.append(f'{app["condition"]} -> {app["spectrum"]}')
+        if len(fails) > 0:
+            QMessageBox.warning(None, 'appy failures',
+                f'Some gate applications could not be restored because either the spectrum or condition could not be restored: {", ".join(fails)}'
+            )
     def _get_current_applications(self):
         # This is hidden in a method because there's some actual massaging in both Rustogramer
         # and SpecTcl needed to make the actual list of spectra with gates applied:
