@@ -10,7 +10,7 @@ from PyQt5.Qt import *
 import os
 
 from gatelist import ConditionChooser, common_condition_model
-from ParameterChooser import ParameterTree, update_model
+from ParameterChooser import ParameterTree, update_model, parameters
 from editablelist import EditableList
 from spectrumeditor import error
 import capabilities
@@ -226,7 +226,11 @@ class ParametersPage(QWizardPage):
     def _update_parameters(self):
         update_model(self._client)    
     def _all_parameters(self):
-        pass
+        names = parameters()
+        current = self._list.list()
+        for name in names:
+            if name not in current:
+                self._list.appendItem(name)
     
     def _add(self):
         current = self._list.list()
