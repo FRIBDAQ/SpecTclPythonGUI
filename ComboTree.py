@@ -140,7 +140,8 @@ class ComboTree(QComboBox):
         model= self.model()
         if model is not None:
             self._lastIndex = idx
-            if not model.itemFromIndex(idx).hasChildren():
+            index = model.itemFromIndex(idx)
+            if index is not None and not index.hasChildren():
                 self.selected.emit(self._path(idx))
         super().mouseReleaseEvent(e)
     
