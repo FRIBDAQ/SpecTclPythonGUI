@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (
     QAction, QDialog, QDialogButtonBox, QVBoxLayout, QHBoxLayout, QRadioButton, QFileDialog,
-    QLabel, QCheckBox, QPushButton, QTextEdit
+    QLabel, QCheckBox, QPushButton, QTextEdit, QMessageBox
 )
 from PyQt5.QtCore import QObject
 from PyQt5.Qt import Qt
@@ -369,89 +369,128 @@ class FileMenu(QObject):
             dtype = capabilities.ChannelTypesToDataTypeStrings[
                 capabilities.get_default_channelType()]
         
+        bad_types = []    # Spectra we could not make due to their types:
         
         if stype == '1':
-            self._client.spectrum_create1d(
-                name, definition['xparameters'][0], 
-                definition['xaxis']['low'], definition['xaxis']['high'], definition['xaxis']['bins'],
-                dtype
-            )
+            if capabilities.has_1d():
+                self._client.spectrum_create1d(
+                    name, definition['xparameters'][0], 
+                    definition['xaxis']['low'], definition['xaxis']['high'], definition['xaxis']['bins'],
+                    dtype
+                )
+            else:
+                bad_types.append(name)
         elif stype == '2':
-            self._client.spectrum_create2d(
-                name, definition['xparameters'][0], definition['yparameters'][0],
-                definition['xaxis']['low'], definition['xaxis']['high'], definition['xaxis']['bins'],
-                definition['yaxis']['low'], definition['yaxis']['high'], definition['yaxis']['bins'],
-                dtype
-            )
+            if capabilities.has_2d():
+                self._client.spectrum_create2d(
+                    name, definition['xparameters'][0], definition['yparameters'][0],
+                    definition['xaxis']['low'], definition['xaxis']['high'], definition['xaxis']['bins'],
+                    definition['yaxis']['low'], definition['yaxis']['high'], definition['yaxis']['bins'],
+                    dtype
+                )
+            else:
+                bad_types.append(name)
         elif stype == 'g1':
-            self._client.spectrum_createg1(
-                name, definition['parameters'],
-                definition['xaxis']['low'], definition['xaxis']['high'], definition['xaxis']['bins'],
-                dtype
-            )
+            if capabilities.has_gamma1d():
+                self._client.spectrum_createg1(
+                    name, definition['parameters'],
+                    definition['xaxis']['low'], definition['xaxis']['high'], definition['xaxis']['bins'],
+                    dtype
+                )
+            else:
+                bad_types.append(name)
         elif stype == 'g2':
-            self._client.spectrum_createg2(
-                name, definition['parameters'],
-                definition['xaxis']['low'], definition['xaxis']['high'], definition['xaxis']['bins'],
-                definition['yaxis']['low'], definition['yaxis']['high'], definition['yaxis']['bins'],
-                dtype
-            )
+            if capabilities.has_gamma2d():
+                self._client.spectrum_createg2(
+                    name, definition['parameters'],
+                    definition['xaxis']['low'], definition['xaxis']['high'], definition['xaxis']['bins'],
+                    definition['yaxis']['low'], definition['yaxis']['high'], definition['yaxis']['bins'],
+                    dtype
+                )
+            else:
+                bad_types.append(name)
         elif stype == 'gd':
-            self._client.spectrum_creategd(
-                name, definition['xparameters'], definition['yparameters'],
-                definition['xaxis']['low'], definition['xaxis']['high'], definition['xaxis']['bins'],
-                definition['yaxis']['low'], definition['yaxis']['high'], definition['yaxis']['bins'],
-                dtype
-            )
+            if capabilities.has_pgamma():
+                self._client.spectrum_creategd(
+                    name, definition['xparameters'], definition['yparameters'],
+                    definition['xaxis']['low'], definition['xaxis']['high'], definition['xaxis']['bins'],
+                    definition['yaxis']['low'], definition['yaxis']['high'], definition['yaxis']['bins'],
+                    dtype
+                )
+            else:
+                bad_types.append(name)
         elif stype == 's':
-            # Axis definition...if there's a y axis we use it otherwise the X
-            # That may be a SpecTcl Rustogramer difference:
-            if definition['yaxis'] is not None and len(definition['yaxis']) != 0:
-                axis = definition['yaxis']
+            if capabilities.hasw_summmary():
+                # Axis definition...if there's a y axis we use it otherwise the X
+                # That may be a SpecTcl Rustogramer difference:
+                if definition['yaxis'] is not None and len(definition['yaxis']) != 0:
+                    axis = definition['yaxis']
+                else:
+                    axis = definition['xaxis']
+                self._client.spectrum_createsummary(
+                    name, definition['parameters'],
+                    axis['low'], axis['high'], axis['bins'],
+                    dtype
+                )
             else:
-                axis = definition['xaxis']
-            self._client.spectrum_createsummary(
-                name, definition['parameters'],
-                axis['low'], axis['high'], axis['bins'],
-                dtype
-            )
+                bad_types.append(name)
         elif stype == 'm2':
-            # If there's no y parameters, then every other parameter in x/y is 
-            # x,y
-            if definition['yparameters'] is None:
-                xparams =list()
-                yparams = list()
-                p  = iter(definition['parameters'])
-                for x in p:
-                    xparams.append(x)
-                    yparams.append(next(p))
+            if capabilities.has_twosd_sum():
+                # If there's no y parameters, then every other parameter in x/y is 
+                # x,y
+                if definition['yparameters'] is None:
+                    xparams =list()
+                    yparams = list()
+                    p  = iter(definition['parameters'])
+                    for x in p:
+                        xparams.append(x)
+                        yparams.append(next(p))
+                else:
+                    xparams = definition['xparameters']
+                    yparams = definition['yparameters']
+                self._client.spectruM_create2dsum(
+                    name, xparams, yparams,
+                    definition['xaxis']['low'], definition['xaxis']['high'], definition['xaxis']['bins'],
+                    definition['yaxis']['low'], definition['yaxis']['high'], definition['yaxis']['bins'],
+                    dtype
+                )
             else:
-                xparams = definition['xparameters']
-                yparams = definition['yparameters']
-            self._client.spectruM_create2dsum(
-                name, xparams, yparams,
-                definition['xaxis']['low'], definition['xaxis']['high'], definition['xaxis']['bins'],
-                definition['yaxis']['low'], definition['yaxis']['high'], definition['yaxis']['bins'],
-                dtype
-            )
+                bad_types.append(name)
         elif stype == 'S':
-            self._client.spectrum_createstripchart(
-                name, definition['xparameters'][0], definition['yparameters'][1],
-                definition['xaxis']['low'], definition['xaxis']['high'], definition['xaxis']['bins'],
-                definition['yaxis']['low'], definition['yaxis']['high'], definition['yaxis']['bins'],
-                dtype
-            )
+            if capabilities.has_stripchart():
+                self._client.spectrum_createstripchart(
+                    name, definition['xparameters'][0], definition['yparameters'][1],
+                    definition['xaxis']['low'], definition['xaxis']['high'], definition['xaxis']['bins'],
+                    definition['yaxis']['low'], definition['yaxis']['high'], definition['yaxis']['bins'],
+                    dtype
+                )
+            else:
+                bad_types.append(name)
         elif stype == 'b':
-            self._client.spectrum_createbitmask(
-                name, definition['xparameters'][0],
-                definition['xaxis']['low'], definition['xaxis']['high'], definition['xaxis']['bins'],
-                dtype
-            )
+            if capabilities.has_bitmask():
+                self._client.spectrum_createbitmask(
+                    name, definition['xparameters'][0],
+                    definition['xaxis']['low'], definition['xaxis']['high'], definition['xaxis']['bins'],
+                    dtype
+                )
+            else:
+                bad_types.append(name)
         elif stype == 'gs':
-            print(' gamma summary def looks like: ', definition)
+            if capabilities.has_gamma_summary():
+                print(' gamma summary def looks like: ', definition)
+            else:
+                bad_types.append(name)
         else:
             error(f'Specturm if type {stype} is not supported at this time.')
     
+        # IF there are any spectra we could not create due to their types pop up a dialog
+        
+        if len(bad_types) > 0:
+            bad_names = ', '.join(bad_types)
+            QMessageBox.warning(None, 'Unsupported Type',
+                f'The following spectrum could not be made because it has an unsupp0rted type: {bad_names}'
+            )
+            
     def _recreate_condition(self, cond):
         # Re create a condition in the server:
         # JUst return if the condition type is not supported by our histogramer:
@@ -460,7 +499,10 @@ class FileMenu(QObject):
         cname = cond['name']
         ctype = cond['type']
         
-        if not capabilities.has_condition_type(capabilities.ConditionTypeNamesToType[ctype]):
+        if not capabilities.has_condition_name(ctype):
+            QMessageBox.warning(None, "Unsupported condition type", 
+                f'Cannot make condition {cname} because it is of type {ctype} which is not supported by the server'
+            )
             return
         
         if ctype == 'T':
@@ -535,8 +577,16 @@ class FileMenu(QObject):
                 pass                          # Should be 2.
         # make the applications:
         
+        fails = []
         for app in apps:
-            self._client.apply_gate(app['condition'], app['spectrum'])
+            try:
+                self._client.apply_gate(app['condition'], app['spectrum'])
+            except:
+                fails.append(f'{app["condition"]} -> {app["spectrum"]}')
+        if len(fails) > 0:
+            QMessageBox.warning(None, 'appy failures',
+                f'Some gate applications could not be restored because either the spectrum or condition could not be restored: {", ".join(fails)}'
+            )
     def _get_current_applications(self):
         # This is hidden in a method because there's some actual massaging in both Rustogramer
         # and SpecTcl needed to make the actual list of spectra with gates applied:

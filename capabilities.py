@@ -171,6 +171,8 @@ def has_bitmask():
     return _has_stype(SpectrumTypes.Bitmask)
 def has_projection():
     return _has_stype(SpectrumTypes.Projection)
+def has_gamma_summary():
+    return _has_stype(SpectrumTypes.GammaSummary)
 def get_supported_spectrumTypes():
     global supported_spectrum_types
     server_program = get_program()
@@ -292,6 +294,12 @@ def has_condition_type(selector):
     global supported_condition_types
     program = get_program()
     return selector in supported_condition_types[program]
+
+def has_condition_name(name):
+    if name not in ConditionTypeNamesToType.keys():  # supports stupid tests.
+        return False
+    type = ConditionTypeNamesToType[name]
+    return has_condition_type(tpe)
 
 def get_supported_condition_types():
     global supported_condition_types
