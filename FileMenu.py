@@ -490,6 +490,7 @@ class FileMenu(QObject):
             QMessageBox.warning(None, 'Unsupported Type',
                 f'The following spectrum could not be made because it has an unsupp0rted type: {bad_names}'
             )
+            
     def _recreate_condition(self, cond):
         # Re create a condition in the server:
         # JUst return if the condition type is not supported by our histogramer:
@@ -498,7 +499,10 @@ class FileMenu(QObject):
         cname = cond['name']
         ctype = cond['type']
         
-        if not capabilities.has_condition_type(capabilities.ConditionTypeNamesToType[ctype]):
+        if not capabilities.has_condition_name(ctype):
+            QMessageBox.warning(None, "Unsupported condition type", 
+                f'Cannot make condition {cname} because it is of type {ctype} which is not supported by the server'
+            )
             return
         
         if ctype == 'T':

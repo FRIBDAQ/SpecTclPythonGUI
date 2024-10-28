@@ -295,6 +295,12 @@ def has_condition_type(selector):
     program = get_program()
     return selector in supported_condition_types[program]
 
+def has_condition_name(name):
+    if name not in ConditionTypeNamesToType.keys():  # supports stupid tests.
+        return False
+    type = ConditionTypeNamesToType[name]
+    return has_condition_type(tpe)
+
 def get_supported_condition_types():
     global supported_condition_types
     program = get_program()
