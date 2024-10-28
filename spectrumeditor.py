@@ -279,16 +279,19 @@ class TwodController(AbstractController):
                 error(f'Failed to bind {name} - but spectrum was created: {e}')
     
     def load_xaxis(self, pname):
-        param_info = self._client.parameter_list(pname)['detail'][0]
-        self._view.setXLow(default(param_info['low'], 0))
-        self._view.setXHigh(default(param_info['hi'], 512.0),)  # like tree params.
-        self._view.setXBins(default(param_info['bins'], 512))
+        param_info = self._client.parameter_list(pname)['detail']
+        if len(param_info) > 0:
+            param_info = param_info[0]
+            self._view.setXLow(default(param_info['low'], 0))
+            self._view.setXHigh(default(param_info['hi'], 512.0),)  # like tree params.
+            self._view.setXBins(default(param_info['bins'], 512))
     def load_yaxis(self, pname):
-        param_info = self._client.parameter_list(pname)['detail'][0]
-        self._view.setYLow(default(param_info['low'], 0))
-        self._view.setYHigh(default(param_info['hi'], 512.0),)  # like tree params.
-
-        self._view.setYBins(default(param_info['bins'], 512))
+        param_info = self._client.parameter_list(pname)['detail']
+        if len(param_info) > 0:
+            param_info = param_info[0]
+            self._view.setYLow(default(param_info['low'], 0))
+            self._view.setYHigh(default(param_info['hi'], 512.0),)  # like tree params.
+            self._view.setYBins(default(param_info['bins'], 512))
 
 ##
 #  Controller for summary spectra.

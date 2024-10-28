@@ -377,7 +377,11 @@ class SpectrumSelector(QWidget):
     ''' 
     This widget consists of a SpectrumNameList on the left and an editablelist
     on the right.   The editablelist signals are autonmosly handled so that
-    spectr are loaded into the editable box etc. etc.
+    spectra are loaded into the editable box etc. etc.
+    
+    Issue #4 adds an 'all' button to the bottom of the list of spectra
+    that transfers all into the box on the right.  Since we support multi-select, we don't
+    add the array box as suggested in the issue the user can just shift 
     
     '''
     def __init__(self, client, *args):

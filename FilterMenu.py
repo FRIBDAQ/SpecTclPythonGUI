@@ -206,23 +206,33 @@ class ParametersPage(QWizardPage):
         chooser.addWidget(self._list)
         layout.addLayout(chooser)
         
+        buttons = QHBoxLayout()
+        self._all = QPushButton('All', self)
+        buttons.addWidget(self._all)
         self._update = QPushButton("Update Parameters", self)
+        buttons.addWidget(self._update)
         
-        layout.addWidget(self._update)
+        layout.addLayout(buttons)
         
         self.setLayout(layout)
         
         # Internal signal handling:
         
         self._update.clicked.connect(self._update_parameters)
+        self._all.clicked.connect(self._all_parameters)
         self._list.add.connect(self._add)
+
         
     def _update_parameters(self):
-        update_model(self._client)
-        
+        update_model(self._client)    
+    def _all_parameters(self):
+        pass
+    
     def _add(self):
+        current = self._list.list()
         for parameter  in self._tree.selection():
-            self._list.appendItem(parameter)
+            if parameter not in current:
+                self._list.appendItem(parameter) 
     def parameters(self):
         return self._list.list()
 class FilePage(QWizardPage):
