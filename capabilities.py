@@ -171,6 +171,8 @@ def has_bitmask():
     return _has_stype(SpectrumTypes.Bitmask)
 def has_projection():
     return _has_stype(SpectrumTypes.Projection)
+def has_gamma_summary():
+    return _has_stype(SpectrumTypes.GammaSummary)
 def get_supported_spectrumTypes():
     global supported_spectrum_types
     server_program = get_program()
