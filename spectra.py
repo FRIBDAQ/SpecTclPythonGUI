@@ -14,8 +14,9 @@
 
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QFrame,
-    QApplication, QMainWindow, QSizePolicy, QMessageBox
+    QApplication, QMainWindow, QSizePolicy, QMessageBox,
 )
+from PyQt5.QtCore import QSortFilterProxyModel
 
 from SpectrumList import (SpectrumList, SpectrumModel)
 from spectrumeditor import Editor
@@ -59,7 +60,11 @@ class SpectrumWidget(QWidget):
         layout.addWidget(self._listing)
 
         self._spectrumListModel = SpectrumModel()
-        self._listing.getList().setModel(self._spectrumListModel)
+        self._filteredModel = QSortFilterProxyModel()
+        self._filteredModel.setSourceModel(self._spectrumListModel)
+        self._filteredModel.setFilterKeyColumn(0)
+        self._filteredModel.setFilterWildcard('*')
+        self._listing.getList().setModel(self._filteredModel)
         self._listing.getList().horizontalHeader().setModel(self._spectrumListModel)
         self._spectrumListModel.load_spectra(_client)
 
@@ -78,6 +83,7 @@ class SpectrumWidget(QWidget):
         self._editor.load.connect(self._load_spectrum)
 
         self._listing.filter_signal.connect(self._filter_list)
+        self._listing.update_signal.connect(self._update_sourcelist)
         self._listing.clear_signal.connect(self._clear_filter)
         
         self._listing.getList().reload.connect(self._reload_spectrum)
@@ -94,14 +100,16 @@ class SpectrumWidget(QWidget):
         self._spectrumListModel.removeSpectrum(old_name)
 
     def _filter_list(self, mask):
-        global _client
-        self._spectrumListModel.load_spectra(_client, mask)
-        common_condition_model.load(_client)
+        self._filteredModel.setFilterWildcard(mask)
 
     def _clear_filter(self):
         global _client
         self._listing.setMask("*")
         self._filter_list("*")
+    def _update_sourcelist(self):
+        global _client
+        # Update the spectra in the self._psectrumListModel
+        self._spectrumListModel.load_spectra(_client)
 
     # internal slots:
 
