@@ -110,6 +110,7 @@ class SpectrumList(QWidget) :
     # Custom signals so we don't have to expose the buttons:
     
     filter_signal = pyqtSignal(str)
+    update_signal = pyqtSignal()
     clear_signal  = pyqtSignal()
 
 
@@ -123,6 +124,8 @@ class SpectrumList(QWidget) :
         self.controlbar = QWidget(self)
         hlayout = QHBoxLayout()
         self.controlbar.setLayout(hlayout)
+        self.update = QPushButton("Update", self.controlbar)
+        hlayout.addWidget(self.update)
         self.filter = QPushButton("Filter", self.controlbar)
         hlayout.addWidget(self.filter)
         self._mask = QLineEdit(self.controlbar)
@@ -138,6 +141,7 @@ class SpectrumList(QWidget) :
         self._mask.returnPressed.connect(self.filter_relay)
         self.filter.clicked.connect(self.filter_relay)
         self.clear.clicked.connect(self.clear_relay)
+        self.update.clicked.connect(self.update_relay)
 
         
     
@@ -170,7 +174,8 @@ class SpectrumList(QWidget) :
         self.clear_signal.emit()
         self.filter_relay()
 
-
+    def update_relay(self):
+        self.update_signal.emit()
 
    
 #--------------------------------------------------------------
