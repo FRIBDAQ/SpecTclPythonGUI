@@ -59,6 +59,8 @@ class rustogramer:
         result = response.json()
         if result["status"] != "OK":
             raise RustogramerException(result)
+        if self.debug:
+            print(result)
         return result
 
     def _marshall(self, iterable, key):
@@ -78,6 +80,12 @@ class rustogramer:
         for s in strings:
             result = result + s + ' '
         return result.rstrip(' ')
+    
+    def _marshall_metadata(self, name_values):
+        result = {}
+        for nv in name_values:
+            result[nv['name']] = nv['value']
+        return result
 
     def __init__(self, connection):
         """ 
@@ -1421,4 +1429,87 @@ class rustogramer:
     
 
 
+    #-------- Waveform access.  Only works with SpecTcl > v7.0-003.
     
+    def waveform_create(self, name, length):
+        ''' Create a waveform with the given name and length (in samples).
+        The waveform will be filled with zeros.  The name must be unique.
+        the return value detail is the name of the waveform
+        '''
+        return self._transaction('waveform/create', {'name':name, 'samples':length})
+    
+    def waveform_list(self, pattern='*'):
+        '''
+            List the waveforms and their properties whose names match the glob pattern
+            The default value of the pattern parameter matches all waveform names.
+            The returned detail is an iterable collection of dicts with the following
+            keys:
+                name - name of the waveform
+                samples - number of samples in the waveform
+                metadata - A possibily empty dict of metadata associated with the waveform. Keys
+                     are metadata names and values are metadata values.
+        '''
+        
+        #  Note the metadata key has the wrong format so we must marshall its name value
+        #  objec tpairs into the correct dict.
+        
+        raw =  self._transaction('waveform/list', {'pattern':pattern})
+        for md in raw['detail']:
+            md['metadata'] = self._marshall_metadata(md['metadata'])
+       
+        return raw
+    
+    def waveform_get(self, name):
+        ''' Get the samples of the waveform 'name'
+        
+            Since in MPI spectcl all worker processes will provide waveform values, the result is a list
+            containing pairs of the name of the waveform and an interable containing the most recently
+            filled samples.  
+        '''
+        return self._transaction('waveform/get', {'name':name})
+    
+    def waveform_get_metadata(self, name, key=None):
+        ''' Get the metadata associated with the waveform 'name'.
+            If 'key' is provided, only the value associated with that key
+            is returned.  If 'key' is not provided, a dict of all metadata
+            key/value pairs is returned.  If there is no metadata associated
+            with the waveform, an error is returned.  Note that in all cases,
+            the result is a dict whose keys are metadata names and whose values are
+            the key's associated value.
+            
+            
+        '''
+        params = {'name':name}
+        if key is not None:
+            params['key'] = key
+            
+        # The result is a list of objects with name/value attributes which
+        # must be marshalled into the correct dict.
+        raw = self._transaction('waveform/metadata/get', params)
+        raw['detail'] = self._marshall_metadata(raw['detail'])
+        return raw
+    
+    def waveform_set_metadata(self, name, kvdict):
+        ''' Set the metadata associated with the waveform 'name'.
+            The kvdict parameter is a dict of whose keys are metadata names
+            and values the new desired metadata value for that name.
+            with the waveform.  If a key already exists, its value is updated.
+            If it does not exist, it is created.
+            
+            The return detail is empty.
+        '''
+        params = {'name':name}
+        params['key'] = [k for k in kvdict.keys()]
+        params['value'] = [v for v in kvdict.values()]
+        
+        return self._transaction('waveform/metadata/set', params)
+    
+    def waveform_resize(self, name, length):
+        ''' Resize the waveform 'name' to the new length 'length' in samples.
+            If length is less than the current length, the waveform is truncated.
+            If length is greater than the current length, the waveform is extended
+            and new samples are filled with zeros.
+            
+            The return detail is empty.
+        '''
+        return self._transaction('waveform/resize', {'name':name, 'samples':length})
