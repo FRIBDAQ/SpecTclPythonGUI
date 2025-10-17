@@ -96,10 +96,11 @@ class WaveformDataEditor(QWidget):
                 set_table_model - sets the model for the table.
             Signals:
                 commit_changes() - emitted when the commit button is pressed.
+                add_row()        - Emitted when the add row button was clicked.
         
     '''     
     commit_changes = pyqtSignal()
-    
+    add_row        = pyqtSignal()
     def __init__(self, parent=None):
         super(WaveformDataEditor, self).__init__(parent)
         
@@ -125,11 +126,17 @@ class WaveformDataEditor(QWidget):
         self._table = QTableView(self)
         self._layout.addWidget(self._table)
         
+        # Add row button.
+        
+        self._add_row_button  = QPushButton("Add Row", self)
+        self._layout.addWidget(self._add_row_button)
+        self._add_row_button.clicked.connect(self.add_row)
+        
         # Commit button:
         self._commit_button = QPushButton("Commit Changes", self)
         self._layout.addWidget(self._commit_button)
         
-        self._commit_button.clicked.connect(self._commit_button_clicked)
+        self._commit_button.clicked.connect(self.commit_changes)
     
     # Public methods:
     
@@ -164,13 +171,6 @@ class WaveformDataEditor(QWidget):
         '''
         self._table.setModel(model)
         
-    # Private slots:
-    
-    def _commit_button_clicked(self):
-        ''' Slot called when the commit button is clicked.
-            Emits the commit_changes signal.
-        '''
-        self.commit_changes.emit()
         
     
 
@@ -183,10 +183,13 @@ class WaveformViewTab(QWidget):
         Signals:
             waveform_selected(waveform_id) - emitted when a waveform is selected from the list.
                via a double click.. this just relays the signal from the waveform list widget.
+            commit_metadata commit the meatadata of the current waveform.
+            add_meatadata_row - add a row to the metadata model.
     '''
     
     waveform_selected = pyqtSignal(str)
     commit_metadata   = pyqtSignal()
+    add_metadata_row  = pyqtSignal()
     
     def __init__(self, parent=None):
         super(WaveformViewTab, self).__init__(parent)
@@ -208,6 +211,9 @@ class WaveformViewTab(QWidget):
         self._metadata_editor.commit_changes.connect(
             self.commit_metadata
         )       # Relay the signal.
+        self._metadata_editor.add_row.connect(
+            self.add_metadata_row
+        )
         
         # Add the top part of the editor.
         

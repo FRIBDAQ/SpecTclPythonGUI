@@ -14,15 +14,21 @@ class WaveformController:
         self._view = view
         self._client = client
         self._listmodel = QStandardItemModel()
+        self._load_waveform_list()
+        
         self._metadatamodel = QStandardItemModel()
+        
+        
         
         # Connect view signals to slots:
         self._view.waveform_selected.connect(
             self._waveform_selected
         )
+        self._view.add_metadata_row.connect(
+            self._add_metadata
+        )
         
-        # Load the waveform list:
-        self._load_waveform_list()
+        
     
     def _load_waveform_list(self):
         ''' Load the waveform list from the server and set
@@ -49,7 +55,7 @@ class WaveformController:
             value_item = QStandardItem(str(value))
             value_item.setEditable(True)
             self._metadatamodel.appendRow([key_item, value_item])
-    
+    # Internal slots.
     def _waveform_selected(self, waveform_id):
         ''' Slot called when a waveform is selected in the view.
             waveform_id - the string id of the selected waveform.
@@ -62,3 +68,11 @@ class WaveformController:
         self._load_metadata_model(info['metadata'])
         self._view.set_metadata_waveform(info['name'], info['samples'], self._metadatamodel)
     
+    def _add_metadata(self):
+        ''' Add a metadata row with editable name/value'''
+        
+        key = QStandardItem('')
+        value = QStandardItem('')
+        key.setEditable(True)
+        value.setEditable(True)
+        self._metadatamodel.appendRow([key, value])
