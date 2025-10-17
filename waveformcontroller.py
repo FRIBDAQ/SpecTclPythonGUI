@@ -27,6 +27,9 @@ class WaveformController:
         self._view.add_metadata_row.connect(
             self._add_metadata
         )
+        self._view.commit_metadata.connect(
+            self._update_waveform
+        )
         
         
     
@@ -76,3 +79,26 @@ class WaveformController:
         key.setEditable(True)
         value.setEditable(True)
         self._metadatamodel.appendRow([key, value])
+        
+        
+    def _update_waveform(self):
+        ''' Called when the metadata editor part of the view signals the commit button was pushed.'''
+        
+        (name, samples) = self._view.get_metadata_info()
+        
+        # PUll the metadata out of the model... if there are empty keys we ignore them 
+        # those represent added rows that were not filled in.  Metadata can have "" values.
+        
+        metadata = {}
+        for i in range(0, self._metadatamodel.rowCount()):
+            keyItem = self._metadatamodel.item(i, 0)
+            valItem = self._metadatamodel.item(i, 1)
+            key = keyItem.text()
+            if key:             # Checks for non None and not empty (both are falsy).
+                val = valItem.text()
+                metadata[key] = val
+        
+        # Now update the waveform: first the samples then the metadata:
+        
+        self._client.waveform_resize(name, samples)
+        self._client.waveform_set_metadata(name, metadata)
