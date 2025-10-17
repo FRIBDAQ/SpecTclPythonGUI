@@ -178,12 +178,15 @@ class WaveformViewTab(QWidget):
     ''' The waveform view tab.  This lays out the three subwidgets defined above.
         Methods:
             set_waveforms - sets the waveforms that are to be displayed in the list (model).
+            set_metadata_waveform - sets the metadata editor.
+            get_metadata_info  - Gets data from the meatdata editor.
         Signals:
             waveform_selected(waveform_id) - emitted when a waveform is selected from the list.
                via a double click.. this just relays the signal from the waveform list widget.
     '''
     
     waveform_selected = pyqtSignal(str)
+    commit_metadata   = pyqtSignal()
     
     def __init__(self, parent=None):
         super(WaveformViewTab, self).__init__(parent)
@@ -197,10 +200,14 @@ class WaveformViewTab(QWidget):
         self.listing = WaveformListWidget(self)
         self._toplayout.addWidget(self.listing)
         
-        # Metadata editor.
+        # Metadata editor...disabled until loaded.
         
         self._metadata_editor = WaveformDataEditor(self)
+        self._metadata_editor.setDisabled(True)
         self._toplayout.addWidget(self._metadata_editor)
+        self._metadata_editor.commit_changes.connect(
+            self.commit_metadata
+        )       # Relay the signal.
         
         # Add the top part of the editor.
         
@@ -217,6 +224,30 @@ class WaveformViewTab(QWidget):
         '''
         self.listing.set_model(model)
         
+    def set_metadata_waveform(self, name, samples, model): 
+        ''' Set the metadata editor to display the given waveform.
+            name - the waveform name (string).
+            samples - the number of samples (int).
+            model - a QAbstractTableModel derived class that provides
+                    the metadata.
+        '''
+        self._metadata_editor.set_name(name)
+        self._metadata_editor.set_samples(samples)
+        self._metadata_editor.set_table_model(model)
+        self._metadata_editor.setDisabled(False)
+    
+    def get_metadata_info(self):
+        ''' Get the metadata info from the editor.
+            returns - a tuple (name, samples) where
+                      name is the waveform name (string)
+                      samples is the number of samples (int).
+            The assumption is that caller already has access to the
+            metadata model.
+        '''
+        name = self._metadata_editor.name()
+        samples = self._metadata_editor.samples()
+        return (name, samples)
+    
     # Private slots:
     
     def _waveform_selected(self, waveform_id):
