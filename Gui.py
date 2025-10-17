@@ -34,7 +34,7 @@ import GateMenu
 import HelpMenu
 import bindings
 import bindingscontroller
-import waveformview
+import waveformview, waveformcontroller
 
 
 def _updateBindableSpectra(index):
@@ -222,6 +222,9 @@ tab_num += 1
 
 if capabilities.has_waveforms():
     wave_form_view = waveformview.WaveformViewTab()
+    wave_form_controller = waveformcontroller.WaveformController(
+        wave_form_view, client
+    )                               # hook the controller and view together.
     tabs.addTab(wave_form_view, 'Waveforms')
     waveform_view_tab_index = tab_num
     tab_num += 1
