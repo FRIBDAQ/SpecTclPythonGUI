@@ -38,6 +38,7 @@ class WaveformListWidget(QWidget):
                 on a double click in the box.
             
     '''
+    waveform_selected = pyqtSignal(str)
     def __init__(self, parent=None):
         super(WaveformListWidget, self).__init__(parent)
         
@@ -74,8 +75,15 @@ class WaveformListWidget(QWidget):
 
 class WaveformViewTab(QWidget):
     ''' The waveform view tab.  This lays out the three subwidgets defined above.
+        Methods:
+            set_waveforms - sets the waveforms that are to be displayed in the list (model).
+        Signals:
+            waveform_selected(waveform_id) - emitted when a waveform is selected from the list.
+               via a double click.. this just relays the signal from the waveform list widget.
     '''
+    
     waveform_selected = pyqtSignal(str)
+    
     def __init__(self, parent=None):
         super(WaveformViewTab, self).__init__(parent)
         
@@ -86,3 +94,23 @@ class WaveformViewTab(QWidget):
         self.listing = WaveformListWidget(self)
         self._toplayout.addWidget(self.listing)
         self._layout.addLayout(self._toplayout)
+        
+        self.listing.waveform_selected.connect(self._waveform_selected)
+    
+    # Public methods:
+    
+    def set_waveforms(self, model):
+        ''' Set the waveforms to be displayed in the list.
+            model - a QAbstractListModel derived class that provides
+                    the waveform list.
+        '''
+        self.listing.set_model(model)
+        
+    # Private slots:
+    
+    def _waveform_selected(self, waveform_id):
+        ''' Slot called when a waveform is selected in the list.
+            Emits the waveform_selected signal.
+        '''
+        self.waveform_selected.emit(waveform_id)
+    
