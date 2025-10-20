@@ -177,9 +177,16 @@ def get_supported_spectrumTypes():
     global supported_spectrum_types
     server_program = get_program()
     return supported_spectrum_types[server_program]
+def has_waveforms():
+    ''' Return true if the server prorgram supports the waveform
+        requests.  This is true if the version is greater than or equal to
+        7.0-003 and the program is SpecTcl.
+    '''
+    server = get_program()
+    return server == Program.SpecTcl and combined_version >= _make_combined_version(7,0,3)
 
 
-#  Spectrum data types supported:
+#Spectrum data types supported:
 
 class ChannelTypes(Enum):
     Double = auto()

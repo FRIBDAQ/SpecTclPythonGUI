@@ -34,6 +34,7 @@ import GateMenu
 import HelpMenu
 import bindings
 import bindingscontroller
+import waveformview, waveformcontroller
 
 
 def _updateBindableSpectra(index):
@@ -216,6 +217,17 @@ tabs.addTab(bindings_view, 'BindSets')
 bindings_tab_index = tab_num
 tabs.currentChanged.connect(_updateBindableSpectra)
 tab_num += 1 
+
+# If the server suports waveforms add a tab with the waveform view:
+
+if capabilities.has_waveforms():
+    wave_form_view = waveformview.WaveformViewTab()
+    wave_form_controller = waveformcontroller.WaveformController(
+        wave_form_view, client
+    )                               # hook the controller and view together.
+    tabs.addTab(wave_form_view, 'Waveforms')
+    waveform_view_tab_index = tab_num
+    tab_num += 1
 
 # if you add tabs, be sure to update tab_num so that, if necessary a tab can save its tab number.
 #  Note that the tab number below are capability dependent.
