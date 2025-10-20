@@ -30,6 +30,7 @@ class WaveformController:
         self._view.commit_metadata.connect(
             self._update_waveform
         )
+        self._view.refresh_plot.connect(self._update_plot)
         
         
     
@@ -102,3 +103,14 @@ class WaveformController:
         
         self._client.waveform_resize(name, samples)
         self._client.waveform_set_metadata(name, metadata)
+        
+    def _update_plot(self):
+        ''' Called to update the plot - get the name, get the waveform and plot it. '''
+        
+        (name, _) = self._view.get_metadata_info()  # Don't care about the metadata.
+        waveform_data = self._client.waveform_get(name)['detail'][0]   # first waveform.
+        
+        # waveform_data is (name, points, rank) so:
+        
+        self._view.plot(name, waveform_data['samples'])
+        

@@ -185,7 +185,7 @@ class PlotWidget(FigureCanvasQTAgg):
            set_title - set plot title
     '''       
     def __init__(self, parent=None):
-        self._fig=Figure(dpi=100)
+        self._fig=Figure()
         self._axis=None
         super().__init__(self._fig)
         
@@ -200,14 +200,15 @@ class PlotWidget(FigureCanvasQTAgg):
         # make a new axis and plot in it.
         # note we need to make the xpts. the ypts are the samples.
         
-        self._axis = self._fig.add_subplot(111)
-        xcoords = [x for x in range(0, len(samples))]
-        self._axis.plot(xcoords, samples)
+        self._axis = self._fig.add_subplot(111, anchor='C')
+        
+        self._axis.plot(samples)
+        self.draw()
     def set_title(self, text):
         '''
            Set figure title text (e.g. waveform name.)
         '''
-        self._fig.sputitle(text)
+        self._fig.suptitle(text)
     
 class WaveformPlot(QWidget) :
     '''
