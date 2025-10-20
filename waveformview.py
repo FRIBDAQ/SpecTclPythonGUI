@@ -23,6 +23,12 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                              QTableView)
 from PyQt5.QtCore import  pyqtSignal
 
+import matplotlib
+matplotlib.use('Qt5Agg')
+
+
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.figure import Figure
 
 class WaveformListWidget(QWidget):
     '''
@@ -170,9 +176,86 @@ class WaveformDataEditor(QWidget):
                     the metadata.
         '''
         self._table.setModel(model)
+
+class PlotWidget(FigureCanvasQTAgg):
+    ''' 
+        Encapsulates the magic needed to use matplottlib to plot a waveform.
+        Methods:
+           plot - erases any prior waveform plot and puts in new points.
+           set_title - set plot title
+    '''       
+    def __init__(self, parent=None):
+        self._fig=Figure(dpi=100)
+        self._axis=None
+        super().__init__(self._fig)
         
+    def plot(self, samples):
+        '''
+            If there is an axis, remove it... then add a new one
+            and plot in it.
+        '''
+        if self._axis is not None:
+            self._fig.delaxes(self._axis)
         
+        # make a new axis and plot in it.
+        # note we need to make the xpts. the ypts are the samples.
+        
+        self._axis = self._fig.add_subplot(111)
+        xcoords = [x for x in range(0, len(samples))]
+        self._axis.plot(xcoords, samples)
+    def set_title(self, text):
+        '''
+           Set figure title text (e.g. waveform name.)
+        '''
+        self._fig.sputitle(text)
     
+class WaveformPlot(QWidget) :
+    '''
+        This widget provides a plot widget for viewing waveforms.  It consists of
+        a matplotlib canvas in which the plot is generated and updated and
+        a button labeled refresh that is, initially disabled (plots can only
+        be updated once the enclosing widget has selected a waveform in the
+        larger scheme of things.
+        
+        Methods:
+           enable  - enable the update method.
+           plot    - Provides a waveform to the plot.
+    '''
+    refresh = pyqtSignal()                  # Refresh clicked.
+    
+    def __init__(self, parent=None):
+            super(WaveformPlot, self).__init__(parent)
+            
+            # Layout the widget with the plot on top and the disabled
+            # Refresh button on the bottom:
+            
+            self._layout = QVBoxLayout(self)
+            self.setLayout(self._layout)
+            
+            # The plot     
+            
+            self._plot = PlotWidget()
+            self._layout.addWidget(self._plot)
+            
+            # The push button and signal relay:
+            
+            self._button = QPushButton ("Refresh", self)
+            self._button.setDisabled(True)
+            self._button.clicked.connect(self.refresh)
+            self._layout.addWidget(self._button)
+
+    def plot(self, name,  samples):
+        '''
+          Plot a waveform in self._plot. 
+        '''
+        self._plot.plot(samples)
+        self._plot.set_title(name)
+        
+    def enable(self):
+        ''' turn on the refresh button: 
+        '''
+        self._button.setDisabled(False)
+                
 
 class WaveformViewTab(QWidget):
     ''' The waveform view tab.  This lays out the three subwidgets defined above.
@@ -180,16 +263,20 @@ class WaveformViewTab(QWidget):
             set_waveforms - sets the waveforms that are to be displayed in the list (model).
             set_metadata_waveform - sets the metadata editor.
             get_metadata_info  - Gets data from the meatdata editor.
+            plot          - Plot a waveform.
         Signals:
             waveform_selected(waveform_id) - emitted when a waveform is selected from the list.
                via a double click.. this just relays the signal from the waveform list widget.
             commit_metadata commit the meatadata of the current waveform.
             add_meatadata_row - add a row to the metadata model.
+            refresh_plot      - User clicked the plot refresh button. It is expected the
+                    plot method will be called.
     '''
     
     waveform_selected = pyqtSignal(str)
     commit_metadata   = pyqtSignal()
     add_metadata_row  = pyqtSignal()
+    refresh_plot      = pyqtSignal()
     
     def __init__(self, parent=None):
         super(WaveformViewTab, self).__init__(parent)
@@ -220,6 +307,12 @@ class WaveformViewTab(QWidget):
         self._layout.addLayout(self._toplayout)
         
         self.listing.waveform_selected.connect(self._waveform_selected)
+        
+        # Add the plot widget on the bottom:
+        
+        self._plot = WaveformPlot(self)
+        self._layout.addWidget(self._plot)
+        self._plot.refresh.connect(self.refresh_plot)
     
     # Public methods:
     
@@ -241,6 +334,7 @@ class WaveformViewTab(QWidget):
         self._metadata_editor.set_samples(samples)
         self._metadata_editor.set_table_model(model)
         self._metadata_editor.setDisabled(False)
+        self._plot.enable()
     
     def get_metadata_info(self):
         ''' Get the metadata info from the editor.
@@ -254,6 +348,10 @@ class WaveformViewTab(QWidget):
         samples = self._metadata_editor.samples()
         return (name, samples)
     
+    def plot(self, name, samples):
+        ''' delegates to the waveform plotter: '''
+        self._plot.plot(name, samples)
+        
     # Private slots:
     
     def _waveform_selected(self, waveform_id):
