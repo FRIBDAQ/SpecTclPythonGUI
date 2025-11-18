@@ -251,6 +251,8 @@ class WaveformPlot(QWidget) :
         '''
         self._plot.plot(samples)
         self._plot.set_title(name)
+    def add_fit(self, name, points):
+        print("adding fit", name)     # Need to add to the plot object.
         
     def enable(self):
         ''' turn on the refresh button: 
@@ -352,7 +354,9 @@ class WaveformViewTab(QWidget):
     def plot(self, name, samples):
         ''' delegates to the waveform plotter: '''
         self._plot.plot(name, samples)
-        
+    def add_fit(self, fit_name, points):
+        ''' delegates to waveform plotter - add a fit to the curren plot'''
+        self._plot.add_fit(fit_name, points)
     # Private slots:
     
     def _waveform_selected(self, waveform_id):
