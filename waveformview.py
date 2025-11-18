@@ -209,7 +209,8 @@ class PlotWidget(FigureCanvasQTAgg):
         
         self._axis = self._fig.add_subplot(111, anchor='C')
         
-        self._axis.plot(samples)
+        self._axis.plot(samples, label='waveform')
+        self._axis.legend(loc='best')
         self.draw()
     def add_fit(self, name, points):
         ''' Add a fitline to the plot.  The waveform must have been
@@ -218,7 +219,8 @@ class PlotWidget(FigureCanvasQTAgg):
             points - fit points.
         '''
         
-        self._axis.plot(points, color=self._color())
+        self._axis.plot(points, color=self._color(), label=f'Fit: {name}')
+        self._axis.legend(loc='best')
         self.draw()
         
     def set_title(self, text):
