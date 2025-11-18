@@ -1513,3 +1513,45 @@ class rustogramer:
             The return detail is empty.
         '''
         return self._transaction('waveform/resize', {'name':name, 'samples':length})
+    
+    # Issue #21 additions for fits./
+    
+    def waveform_fits(self, name, pattern='*'):
+        ''' 
+           Obtain information about the fits. that are associated with a waveform.
+           Parameters:
+              name - name of the waveform.
+              pattern - glob pattern fit names must match. Defaults to '*' if not supplied.
+            Returns:
+               Result from ReST server.  The 'detail' on success is a list of dicts.
+               Each dict describes a fit and has the following keys:
+               - 'name' - the name of the fit.
+               - 'points' - a list of readl valued fit points.
+        '''
+        return self._transaction("waveform/fits", {'name': name, 'pattern': pattern})
+    
+    def waveform_getall(self, name):
+        '''
+            Get waveform and fit information that is synchronized to the same event.
+            Parameters:
+              name - the name of the waveform.
+            Returns:
+               Result from ReST server.  The detail on success is a dict with the following
+               keys:
+               - name     - name of the waveform
+               - waveform - a dict that describes the waveform.  See below.
+               - fits     - a list of dicts that desribe the fits See below:
+               
+               Waveform dict has the following keys:
+                  - name    - name of the waveform (again).
+                  - samples - A list of integers that are the waveform samples for the event.
+                  - rank    - Identifies the process that is contributing the waveform.
+                              in Serial SpecTcl, this is always 0.  In MPISpecTcl,
+                              this identifies the rank of the process that contributed
+                              the waveform.  This will be a worker rank of 2 or larger.
+                Fit dict has the following keys:
+                   -  name - Name of the fit.
+                   -  points - A list of real valued data that represent the fit evaluated
+                               at each sample position.
+        '''
+        return self._transaction('waveform/getall', {'name': name})
