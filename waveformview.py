@@ -182,11 +182,15 @@ class PlotWidget(FigureCanvasQTAgg):
         Encapsulates the magic needed to use matplottlib to plot a waveform.
         Methods:
            plot - erases any prior waveform plot and puts in new points.
+           add_fit - adds a fitline.
            set_title - set plot title
     '''       
+    fit_colors = ['red', 'green', 'blue', 'magenta', 'cyan', 'yellow ',
+        'dark green', 'brown', 'hot pink']
     def __init__(self, parent=None):
         self._fig=Figure()
         self._axis=None
+        self._next_color = 0
         super().__init__(self._fig)
         
     def plot(self, samples):
@@ -196,20 +200,41 @@ class PlotWidget(FigureCanvasQTAgg):
         '''
         if self._axis is not None:
             self._fig.delaxes(self._axis)
+            # Kill off any fit axes.
+           
+        self._next_color = 0   # Reset the next fit color.
         
         # make a new axis and plot in it.
         # note we need to make the xpts. the ypts are the samples.
         
         self._axis = self._fig.add_subplot(111, anchor='C')
         
-        self._axis.plot(samples)
+        self._axis.plot(samples, label='waveform')
+        self._axis.legend(loc='best')
         self.draw()
+    def add_fit(self, name, points):
+        ''' Add a fitline to the plot.  The waveform must have been
+            drawn first with plot().
+            name - name of the fit.
+            points - fit points.
+        '''
+        
+        self._axis.plot(points, color=self._color(), label=f'Fit: {name}')
+        self._axis.legend(loc='best')
+        self.draw()
+        
     def set_title(self, text):
         '''
            Set figure title text (e.g. waveform name.)
         '''
         self._fig.suptitle(text)
-    
+    def _color(self): 
+        # Assign a color:
+        result = self.fit_colors[self._next_color]
+        self._next_color += 1
+        if self._next_color >= len(self.fit_colors):
+            self._next_color = 0            # cycle if needed.
+        return result
 class WaveformPlot(QWidget) :
     '''
         This widget provides a plot widget for viewing waveforms.  It consists of
@@ -251,6 +276,9 @@ class WaveformPlot(QWidget) :
         '''
         self._plot.plot(samples)
         self._plot.set_title(name)
+        
+    def add_fit(self, name, points):
+        self._plot.add_fit(name, points)    # Need to add to the plot object.
         
     def enable(self):
         ''' turn on the refresh button: 
@@ -352,7 +380,9 @@ class WaveformViewTab(QWidget):
     def plot(self, name, samples):
         ''' delegates to the waveform plotter: '''
         self._plot.plot(name, samples)
-        
+    def add_fit(self, fit_name, points):
+        ''' delegates to waveform plotter - add a fit to the curren plot'''
+        self._plot.add_fit(fit_name, points)
     # Private slots:
     
     def _waveform_selected(self, waveform_id):

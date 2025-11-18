@@ -108,9 +108,15 @@ class WaveformController:
         ''' Called to update the plot - get the name, get the waveform and plot it. '''
         
         (name, _) = self._view.get_metadata_info()  # Don't care about the metadata.
-        waveform_data = self._client.waveform_get(name)['detail'][0]   # first waveform.
+        data = self._client.waveform_getall(name)['detail']   # Waveform and fits.
+        waveform_data = data['waveform']
         
         # waveform_data is (name, points, rank) so:
         
         self._view.plot(name, waveform_data['samples'])
+        
+        # Now add fits:
+        
+        for fit in data['fits']:
+            self._view.add_fit(fit['name'], fit['points'])
         
