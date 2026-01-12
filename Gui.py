@@ -181,6 +181,7 @@ gatelist.common_condition_model.load(client)
 
 app = QApplication(sys.argv)
 main = QMainWindow()
+main.setWindowTitle("SpecTcl/Rustogramer ReST GUI - powered by Qt5")
 
 # Style sheet to make the selected tabs stand out more:
 
