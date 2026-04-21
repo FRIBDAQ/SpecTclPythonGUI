@@ -362,16 +362,20 @@ def _adjust_for_version():
     #   SpecTcl 5.13-013 adds support for JSON spectrum I/O:
     
     if server_program == Program.SpecTcl:
+        #5.13 adds 'json' spectrum format.
+        
         if combined_version >= _make_combined_version(5, 13, 13):
             supported_spectrum_format_strings[Program.SpecTcl].append('json')
-            
-        # Version 5.14-xxx adds support for FRIBPipe filters.
-        if combined_version >= _make_combined_version(5,14,0):
-            spectcl_filter_formats.append("FRIBPipe")
+        
         # Version 7.0-004 suports hdf5 spectrum format.
         
         if combined_version >= _make_combined_version(7,0,4):
             supported_spectrum_format_strings[Program.SpecTcl].append('hdf5')
+        
+            
+        # Version 5.14-xxx adds support for FRIBPipe filters.
+        if combined_version >= _make_combined_version(5,14,0):
+            spectcl_filter_formats.append("FRIBPipe")
         
 #
 #  Issue #172 - support both xdr and FRIBPipe filter file formats:
