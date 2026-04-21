@@ -368,8 +368,11 @@ def _adjust_for_version():
         # Version 5.14-xxx adds support for FRIBPipe filters.
         if combined_version >= _make_combined_version(5,14,0):
             spectcl_filter_formats.append("FRIBPipe")
-            
-
+        # Version 7.0-004 suports hdf5 spectrum format.
+        
+        if combined_version >= _make_combined_version(7,0,4):
+            supported_spectrum_format_strings[Program.SpecTcl].append('hdf5')
+        
 #
 #  Issue #172 - support both xdr and FRIBPipe filter file formats:
 #  Note:  This is only for SpecTcl as there is no support for filters
@@ -397,5 +400,4 @@ def has_vector_parameters() :
         return combined_version >= _make_combined_version(7,0,5)
     else:
         return False        # Rustgrammer does not have them.
-    
     
