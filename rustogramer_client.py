@@ -1,7 +1,7 @@
 """ This module provides a client interface to rustogramer
 
 The way to use this module is to instantiate a rustogramer 
-object and then invoke methods on th at object to communicate
+object and then invoke methods on thSSat object to communicate
 with a running rustogramer program.  
 """
 
@@ -571,6 +571,44 @@ class rustogramer:
                 'parameter': parameter
             }
         )
+    def _make_vector_condition(self, name, type, vector, low, high):
+        qdict = {
+                'name': name, 'type': type, 
+                'parameter' : vector, 'low': low, 'high': high
+                
+            }
+        return self._transaction('gate/edit', qdict)
+    def condition_make_vector_and(self, name, vector, low, high):
+        '''
+            Create a vector and gate. (vs*).  This is a slice
+            gate that is defined on a vector and is true
+            iff all elements pushed into the vector that event
+            are in the slice.
+            
+            Paramters:
+              name   - name of the gate (replaces any prior gate by that name).
+              vector - name of the vector to check for the gate.
+              low    - slice low limit
+              high   - slice high limit.
+            Returns:
+              On success there is no 'detail'
+        '''
+        return self._make_vector_condition(name, 'vs*', vector, low, high)
+    
+    def condition_make_vector_or(self, name, vector, low, high):
+        '''
+           Create a vector or gate (vs+).  This is a slice
+           checked on the elements of a vector and true if _any_ of the
+           values pushed into the vector for an event are in the slice.
+           
+           Parameters:
+            name   - name of the gate (replaces any prior gate by that name)
+            vector - name of the vector the gate is checked on.
+            low    - slice low limit.
+            high   - slice high limit.
+        '''
+        return self._make_vector_condition(name, 'vs+', vector, low, high)
+           
     #----------------------- Statistics API.
 
     def get_statistics(self, pattern="*"):

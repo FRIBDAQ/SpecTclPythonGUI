@@ -387,3 +387,15 @@ def supported_filter_formats():
         return spectcl_filter_formats
     else: 
         return []
+    
+#
+#  Issue #23 - support vector parameters:
+#   SpecTc 7.0-005 an higher.
+def has_vector_parameters() :
+    program = get_program()
+    if program == Program.SpecTcl:
+        return combined_version >= _make_combined_version(7,0,5)
+    else:
+        return False        # Rustgrammer does not have them.
+    
+    
