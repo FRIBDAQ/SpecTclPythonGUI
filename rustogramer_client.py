@@ -1555,3 +1555,74 @@ class rustogramer:
                                at each sample position.
         '''
         return self._transaction('waveform/getall', {'name': name})
+    
+    
+    def vector_list(self, pattern='*') :
+        '''
+            List information about vector parameters.
+            note it's up to the client to determine if vector parameters are supported.
+            Parameters:
+            pattern - Optional glob pattern, only vectors with names matching the pattern
+                        are returned.  The defalut is * which matches all vectors.
+            Returns:
+                The return from the server.  If 'status' is OK, the 'detail' is an array of dicts.
+            One for each matching vector.  The keys in the dict are:
+            - name - name of the vector.
+            - low  - vector advisory low limit.
+            - high - vector advisory high limit.
+            - bins - vector binning advisory for the given low/high.
+            - units - units of measure of the vector.
+        '''        
+        return self._transaction('vector/list', {'pattern': pattern})
+    
+    
+    
+    def vector_setlow(self, name, low) :    
+        '''
+            set the advisory low limit for a vector.
+            
+            Parameters:
+            name - vector name.
+            low  - new floating point low limit value.
+            Returns:
+            Nothing in the detail unless it's more information about a failure.
+        '''
+        return self._transaction('vector/setlow', {'name': name, 'low' : low})
+    
+    def vector_sethigh(self, name, high) :
+        '''
+            Set the advisory high limit for a vector
+            
+            Paramters:
+            name - vector name
+            high - new floating point high value.
+            Returns:
+            Normal return has no detail.  Abnormal return will have
+            information about the error in the detail
+        '''
+        return self._transaction('vector/sethigh', {'name': name, 'high': high})
+    
+    def vector_setbins(self, name, bins) :
+        '''
+            Set the advisory binning of a vector\.
+            
+            Parameters:
+            name - vector name
+            bins - new advisor binning
+            Returns:
+            Normal retur does not have a 'detail' Abnormal return sets an
+            error message in the detail.
+        '''
+
+        return self._transaction('vector/setbins', {'name': name, 'bins': bins})
+    
+    def vector_setunits(self, name, units):
+        '''
+            Set the advisory units of measure of a vector.
+            
+            Parameters:
+            name - name of the vector
+        '''
+        return self._transaction('vector/setunits', {'name': name, 'units': units})
+    
+    
