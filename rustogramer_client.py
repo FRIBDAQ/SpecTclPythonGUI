@@ -920,7 +920,27 @@ class rustogramer:
             "spectrum/create", 
             {"name":name, "type":"1", "parameters": parameter, "axes":axis, 'chantype':chantype}
         )
-
+    def spectrum_create1v(self, name, vector, low, high, bins, chantype='f64'):
+        '''
+            Create a 2d vector spectrum.
+            Parmaeters:
+               name - name of the spectrum.
+               vector - name of the vector parameter to histogram.
+               low    - low limit of the spectrum axis.
+               high   - high limit of the spectrum axis.
+               bins   - # of bins on the spectrum axis.
+               chantype - Data type for the channels.. Note that the default
+                        value of f64 is not usable for SpecTcl and normally 
+                        'long' should be used instead.
+                  
+        '''
+        axis = self._format_axis(low, high, bins)
+        qdict = {
+            'name' : name, 'type' : '1v', 'parameters' : vector,
+            'axes' : axis, 'chantype' : chantype
+        }
+        return self._transaction('spectrum/create', qdict)
+        
     def spectrum_create2d(self, name, xparam, yparam, xlow, xhigh, xbins, ylow, yhigh, ybins, chantype='f64'):
         """ Create a simple 2d spectrum:
         *  name - the name of the new spectrum.
