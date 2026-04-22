@@ -40,7 +40,7 @@ class VectorParameterModel(QStandardItemModel) :
                    updates it.
                    
       '''
-      super(VectorParameterModel, self).__init__()
+      super().__init__()
       self._client = client
       self.setHorizontalHeaderLabels(['Name', 'Low', 'High', 'Bins', 'Units'])
     
@@ -120,7 +120,7 @@ class VectorTableView(QTableView) :
   '''
   onDoubleClick = pyqtSignal(int)
   def __init__(self, model, parent=None):
-    super(VectorTableView, self).__init__(parent)
+    super().__init__(parent)
     self.setModel(model)
     
     #  Map the doubleClicked signal to onDoubleClick via
@@ -159,7 +159,6 @@ class VectorEditor(QWidget) :
   cancel = pyqtSignal()
   
   def __init__(self, *args) :
-    print("Initializing editor")
     super().__init__(*args)
     
     
@@ -282,7 +281,155 @@ class VectorEditor(QWidget) :
     self._editor_high.setText('')
     self._editor_bins.setText('')
     self._editor_units.setText('')
-   
+
+
+class  VectorFilterBar(QWidget):
+  '''
+    This is a widget of the form:
+    +---------------------------------------+
+    | [Update] [filter string] [clear]      |
+    +---------------------------------------+
+    
+    
+    The clear button is autonomously handed to load "*" in the
+    filter string (QLineEdit) widget.
+    
+    Signals:
+    
+    update - the update button was clicked passed the current filter string.
+  '''
+  update = pyqtSignal(str)
+  def __init__(self, *args) :
+    '''
+      Construction  
+      Parameters 
+        *args - passed uninterpreted to the QWidget constuctor.
+    '''
+    super().__init__(*args)
+    
+    self._layout = QHBoxLayout()   # Widgets laid out horizontally:
+    self.setLayout(self._layout)
+    
+    self._update = QPushButton('Update', self)
+    self._filter = QLineEdit('*', self)
+    self._clear  = QPushButton('Clear', self);
+    
+    self._layout.addWidget(self._update)
+    self._layout.addWidget(self._filter)
+    self._layout.addWidget(self._clear)
+    
+    # Set internal signal handling:
+    
+    self._update.clicked.connect(self._emitUpdate)
+    self._clear.clicked.connect(self._clearFilter)
+    
+  def getPattern(self): 
+    '''
+      Returns the contents of the filter string line edit.
+    '''
+    return self._filter.text()
+  
+  #-------------------- internal methods ---------------------------------
+  
+  def _emitUpdate(self) :
+    # The update button got clicked.  We fetch the pattern and emit
+    # update:
+    
+    self.update.emit(self._filter.text())
+    
+  def _clearFilter(self) :
+    # The clear button was clicked.  Set the filter mask back to '*' 
+    
+    self._filter.setText('*')
+    
+    
+class VectorWidget(QWidget):
+  '''
+    This megawidget combines the vector table view and
+    vetor editor.   It autonously handles double clicks in the
+    table to load the editor. Simiarly the cancel button on 
+    the editor is autonomously handled to clear the editor.
+    We also autonomou8seul handle the update signal from the
+    filter bar and update the model with that filter string
+    
+    Signals:
+      vectoredited - the Ok button was clicked on the edtor
+      
+
+  '''
+  vectoredited = pyqtSignal()
+  def __init__(self, model, *args) :
+    '''
+      Construction.
+      Parameters:
+         model - the module that will be used by the vector table.
+         *args - passed uninterpreted to the QWidget constructor.
+         
+    '''
+    super().__init__(*args)
+    
+    self._model  = model
+    self._layout = QVBoxLayout()
+    self.setLayout(self._layout)
+    self._table  = VectorTableView(model, self)
+    self._editor = VectorEditor(self)
+    self._filter  = VectorFilterBar(self)
+  
+    self._layout.addWidget(self._editor)
+    self._layout.addWidget(self._table)
+    self._layout.addWidget(self._filter)
+    
+    
+    #  Now the autonomously handled signals:
+    
+    self._table.onDoubleClick.connect(self._selectVector)
+    self._editor.cancel.connect(self._clearEditor)
+    self._filter.update.connect(self._newFilter)    
+    # Relay the ok signal to vectoredited:
+    
+    self._editor.ok.connect(self.vectoredited)
+    
+
+    
+    # Get get the table up to date:
+    
+    self.update()
+  #-----------------------------  public  methods ---------------
+  
+  def update(self) :
+    '''
+      Update the model.
+    '''
+
+    self._model.load(self._filter.getPattern())
+    
+  def getEditor(self) :
+    '''
+      Return the data in the editor.  See VectorEditor.get  -- since we just call that.
+    '''
+    return self._editor.get()
+  
+    
+  def clearEditor(self):
+    ''' Clear the contents of the editor'''
+    self._editor.clear()
+  #--------------------------- autonomous signal handlers --------
+
+  def _selectVector(self, row) :
+    #  Load the selected vector into the editor:
+    
+    info = self._model.get(row)
+    self._editor.load(info)
+    
+  def _clearEditor(self):
+    # Clear the editor data and update the model.
+    
+    self.clearEditor()
+    self.update()
+  
+  def _newFilter(self, pattern) :
+    self.update() 
+    
 # Test code here:
 
 
@@ -291,31 +438,31 @@ if __name__ == "__main__":
   from rustogramer_client import rustogramer as rc
   from PyQt5.QtWidgets import QApplication, QMainWindow
   
-  def selectItem(row) :
-    
-    info = model.get(row)
-    editor.load(info)
-    
-  def ok() :
-    info = editor.get()
+  def edit() :
+    info = main.getEditor()
     name = info['name']
-    low  = int(info['low'])
-    high = int(info['high'])
-    bins = int(info['bins'])
-    units = info['units']
     
-    c.vector_setlow(name, low)
-    c.vector_sethigh(name, high)
-    c.vector_setbins(name, bins)
-    c.vector_setunits(name, units)
-    
-    editor.clear()
-    
-    model.load()     #That updates the table.
+    # don't bother to do anything if there's no vector loaded.
+    if name !=  '':
+      low = int(info['low'])    
+      high = int(info['high'])
+      bins = int(info['bins'])
+      units = info['units']
+      
+      # Update the server blindly for now:
+      
+      c.vector_setlow(name, low)
+      c.vector_sethigh(name, high)
+      c.vector_setbins(name, bins)
+      c.vector_setunits(name, units)
+      
+      # clear the editor and update the model.
+      
+      main.clearEditor()
+      main.update()
   
   
-  def cancel() :
-    editor.clear()
+  
       
   c = rc({'host': 'localhost', 'port': 8000})
   app = QApplication([])
@@ -323,19 +470,9 @@ if __name__ == "__main__":
   
   model = VectorParameterModel(c)
   model.load()
-  view = VectorTableView(model)
-  view.onDoubleClick.connect(selectItem)
   
-  editor = VectorEditor()
-  editor.ok.connect(ok)
-  editor.cancel.connect(cancel)
-  
-  main = QWidget()
-  layout = QVBoxLayout()
-  main.setLayout(layout)
-  layout.addWidget(view)
-  layout.addWidget(editor)
-  
+  main = VectorWidget(model)
+  main.vectoredited.connect(edit)
   
   win.setCentralWidget(main)
   win.show()
