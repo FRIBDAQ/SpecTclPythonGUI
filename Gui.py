@@ -35,7 +35,7 @@ import HelpMenu
 import bindings
 import bindingscontroller
 import waveformview, waveformcontroller
-
+import vectorparams
 
 def _updateBindableSpectra(index):
     if index == bindings_tab_index:
@@ -230,6 +230,14 @@ if capabilities.has_waveforms():
     waveform_view_tab_index = tab_num
     tab_num += 1
 
+if capabilities.has_vector_parameters():
+    vector_model = vectorparams.VectorParameterModel(client)
+    vector_widget = vectorparams.VectorWidget(vector_model, tabs)
+    vector_controller = vectorparams.VectorController(vector_widget, vector_model, client)
+    tabs.addTab(vector_widget, 'Vector Params')
+    vector_tab_index = tab_num
+    tab_num += 1
+    
 # if you add tabs, be sure to update tab_num so that, if necessary a tab can save its tab number.
 #  Note that the tab number below are capability dependent.
 
@@ -239,7 +247,8 @@ if capabilities.has_waveforms():
 
 
 main.setCentralWidget(tabs)
-
+    
+    
 # 
 
 setup_menubar(main, client)
