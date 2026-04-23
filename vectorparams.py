@@ -22,7 +22,7 @@
 '''
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import (QTableView, QWidget, QLineEdit, QFrame,
-    QPushButton, QHBoxLayout, QVBoxLayout, QGridLayout)
+    QPushButton, QMessageBox, QHBoxLayout, QVBoxLayout, QGridLayout)
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.Qt import *
 
@@ -429,6 +429,71 @@ class VectorWidget(QWidget):
   
   def _newFilter(self, pattern) :
     self.update() 
+    
+class VectorController:
+  '''
+    This controller links the signals not handled by the VectorWidget
+    to the model and, application specific operations.
+  '''
+  
+  def __init__(self, view, model, client):
+    '''
+    Parameters:
+      view - is the VectorWidget, we will connect to signals in it.
+      model - is the VectorParameterModel that links to the actual 
+              vector data in the server and provides those data to the
+              view.
+      client- the server client.
+           
+    '''
+    # First save the parameters for use within our methods.
+    
+    self._model = model
+    self._view  = view
+    self._client = client
+    
+    #  Connect to signals:
+    
+    view.vectoredited.connect(self._edit)
+  
+  def _edit(self):
+    #  Handles requested changes of vector properties.
+    #  We don't  bother to figure out what's changed but just
+    #  assert all of the properties in the editor of the view
+    #  we also ask the model to update so the table will reflect
+    #  the changes.
+    
+    info = self._view.getEditor()
+    
+    name = info['name']
+    
+    # don't bother to do anything if there's no vector loaded.
+    if name !=  '':
+      try:
+        low = float(info['low'])    
+        high = float(info['high'])
+        bins = int(info['bins'])
+        units = info['units']
+      except ValueError:
+        # This happens if one of the conversions above fails.
+        
+        QMessageBox.warning(self._view, 'Value eror', 
+          'Bad values in the editor. Be sure low, high are valid floats and bins a valid integer'
+        )
+        return
+      
+      # Update the server blindly for now:
+      
+      self._client.vector_setlow(name, low)
+      self._client.vector_sethigh(name, high)
+      self._client.vector_setbins(name, bins)
+      self._client.vector_setunits(name, units)
+      
+      # clear the editor and update the model.
+      # note that asking the view to run the update allows
+      # it to apply its filter mask transparently.
+      self._view.clearEditor()
+      self._view.update()  
     
 # Test code here:
 
