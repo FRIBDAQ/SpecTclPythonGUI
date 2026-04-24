@@ -120,6 +120,10 @@ class SpectrumTypes(Enum):
     StripChart = auto()
     Bitmask    = auto()
     GammaSummary = auto()
+    
+    # SpecTcl as of 7.0-005 has vector 1d:
+    
+    Vector1D = auto()
 
 # Supported by each type.  This is a map of sets
 # OF types supported by both the API and the 
@@ -371,6 +375,7 @@ def _adjust_for_version():
         
         if combined_version >= _make_combined_version(7,0,4):
             supported_spectrum_format_strings[Program.SpecTcl].append('hdf5')
+            supported_spectrum_types[Program.SpecTcl].add(SpectrumTypes.Vector1D)
         
             
         # Version 5.14-xxx adds support for FRIBPipe filters.
