@@ -86,16 +86,8 @@ class rustogramer:
         for nv in name_values:
             result[nv['name']] = nv['value']
         return result
-    # Private method to do common work of creating a vector gate.
-    def _make_vector_condition(self, name, type, vector, low, high):
-        if type not in ['vs*', 'vs+'] :
-            raise ValueError('Vector gates types must be "vs*" or "vs+" not ' + type)
-        qdict = {
-                'name': name, 'type': type, 
-                'parameter' : vector, 'low': low, 'high': high
-                
-            }
-        return self._transaction('gate/edit', qdict)
+    
+    
     def __init__(self, connection):
         """ 
         Create a new rustogramer client object.
@@ -581,6 +573,16 @@ class rustogramer:
             }
         )
     
+    def make_vector_condition(self, name, type, vector, low, high):
+        if type not in ['vs*', 'vs+'] :
+            raise ValueError('Vector gates types must be "vs*" or "vs+" not ' + type)
+        qdict = {
+                'name': name, 'type': type, 
+                'parameter' : vector, 'low': low, 'high': high
+                
+            }
+        return self._transaction('gate/edit', qdict)
+    
     def condition_make_vector_and(self, name, vector, low, high):
         '''
             Create a vector and gate. (vs*).  This is a slice
@@ -596,7 +598,7 @@ class rustogramer:
             Returns:
               On success there is no 'detail'
         '''
-        return self._make_vector_condition(name, 'vs*', vector, low, high)
+        return self.make_vector_condition(name, 'vs*', vector, low, high)
     
     def condition_make_vector_or(self, name, vector, low, high):
         '''
@@ -610,7 +612,7 @@ class rustogramer:
             low    - slice low limit.
             high   - slice high limit.
         '''
-        return self._make_vector_condition(name, 'vs+', vector, low, high)
+        return self.make_vector_condition(name, 'vs+', vector, low, high)
            
     #----------------------- Statistics API.
 
