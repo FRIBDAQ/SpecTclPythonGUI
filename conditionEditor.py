@@ -261,6 +261,8 @@ _condition_table = {
 
 _type_to_label_table = {
     's' : 'Slice',
+    'vs*' : 'Vector slice*',
+    'vs+' : "Vector slice+",
     'c' : "Contour",
     '*' : "And",
     '+' : "Or",
@@ -274,6 +276,7 @@ _type_to_label_table = {
     'nm': "Mask -*",
     'F' : 'False', 
     'T' : 'True', 
+    
 }
 class ConditionEditor(QTabWidget):
     

@@ -263,6 +263,8 @@ class ConditionTypes(Enum):
     MaskAnd = auto()             # SpecTclOnly.
     MaskNand = auto()          # SpecTclOnly.
     C2Band   = auto()          # SpecTl only.
+    VectorSliceAnd = auto()
+    VectorSliceOr  = auto()
 
 ConditionTypeNamesToType = {
     '*': ConditionTypes.And,
@@ -278,7 +280,8 @@ ConditionTypeNamesToType = {
     'em': ConditionTypes.MaskEqual,
     'am': ConditionTypes.MaskAnd,
     'nm': ConditionTypes.MaskNand,
-    
+    'vs*': ConditionTypes.VectorSliceAnd,
+    'vs+': ConditionTypes.VectorSliceOr
 }
 
 supported_condition_types = {
@@ -376,6 +379,8 @@ def _adjust_for_version():
         if combined_version >= _make_combined_version(7,0,4):
             supported_spectrum_format_strings[Program.SpecTcl].append('hdf5')
             supported_spectrum_types[Program.SpecTcl].add(SpectrumTypes.Vector1D)
+            supported_condition_types[Program.SpecTcl].add(ConditionTypes.VectorSliceAnd)
+            supported_condition_types[Program.SpecTcl].add(ConditionTypes.VectorSliceOr)
         
             
         # Version 5.14-xxx adds support for FRIBPipe filters.
