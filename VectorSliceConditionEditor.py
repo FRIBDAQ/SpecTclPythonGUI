@@ -138,7 +138,7 @@ class EditorView(QWidget):
         self.setName('')
         self.setLow(default_low)
         self.setHigh(default_high)
-        self.setParameter('')
+        
     
     def load_vectors(self, vectors) :
         self._vector.clear()
