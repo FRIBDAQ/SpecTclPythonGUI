@@ -228,6 +228,10 @@ class  Controller:
             eview.setMask(condition['mask'])
         elif type_string == 'T' or type_string == 'F':
             pass                                  # Placeholder because this is a legal type:
+        elif type_string in ['vs*', 'vs+'] :
+            eview.setVector(condition['parameters'][0])
+            eview.setLow(condition['low'])
+            eview.setHigh(condition['high'])
         else:
             error(f'Load for condition type {type_string} is not supported')
             return
