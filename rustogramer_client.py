@@ -1,7 +1,7 @@
 """ This module provides a client interface to rustogramer
 
 The way to use this module is to instantiate a rustogramer 
-object and then invoke methods on th at object to communicate
+object and then invoke methods on thSSat object to communicate
 with a running rustogramer program.  
 """
 
@@ -86,7 +86,8 @@ class rustogramer:
         for nv in name_values:
             result[nv['name']] = nv['value']
         return result
-
+    
+    
     def __init__(self, connection):
         """ 
         Create a new rustogramer client object.
@@ -571,6 +572,48 @@ class rustogramer:
                 'parameter': parameter
             }
         )
+    
+    def make_vector_condition(self, name, type, vector, low, high):
+        if type not in ['vs*', 'vs+'] :
+            raise ValueError('Vector gates types must be "vs*" or "vs+" not ' + type)
+        qdict = {
+                'name': name, 'type': type, 
+                'parameter' : vector, 'low': low, 'high': high
+                
+            }
+        return self._transaction('gate/edit', qdict)
+    
+    def condition_make_vector_and(self, name, vector, low, high):
+        '''
+            Create a vector and gate. (vs*).  This is a slice
+            gate that is defined on a vector and is true
+            iff all elements pushed into the vector that event
+            are in the slice.
+            
+            Paramters:
+              name   - name of the gate (replaces any prior gate by that name).
+              vector - name of the vector to check for the gate.
+              low    - slice low limit
+              high   - slice high limit.
+            Returns:
+              On success there is no 'detail'
+        '''
+        return self.make_vector_condition(name, 'vs*', vector, low, high)
+    
+    def condition_make_vector_or(self, name, vector, low, high):
+        '''
+           Create a vector or gate (vs+).  This is a slice
+           checked on the elements of a vector and true if _any_ of the
+           values pushed into the vector for an event are in the slice.
+           
+           Parameters:
+            name   - name of the gate (replaces any prior gate by that name)
+            vector - name of the vector the gate is checked on.
+            low    - slice low limit.
+            high   - slice high limit.
+        '''
+        return self.make_vector_condition(name, 'vs+', vector, low, high)
+           
     #----------------------- Statistics API.
 
     def get_statistics(self, pattern="*"):
@@ -879,7 +922,27 @@ class rustogramer:
             "spectrum/create", 
             {"name":name, "type":"1", "parameters": parameter, "axes":axis, 'chantype':chantype}
         )
-
+    def spectrum_create1v(self, name, vector, low, high, bins, chantype='f64'):
+        '''
+            Create a 2d vector spectrum.
+            Parmaeters:
+               name - name of the spectrum.
+               vector - name of the vector parameter to histogram.
+               low    - low limit of the spectrum axis.
+               high   - high limit of the spectrum axis.
+               bins   - # of bins on the spectrum axis.
+               chantype - Data type for the channels.. Note that the default
+                        value of f64 is not usable for SpecTcl and normally 
+                        'long' should be used instead.
+                  
+        '''
+        axis = self._format_axis(low, high, bins)
+        qdict = {
+            'name' : name, 'type' : '1v', 'parameters' : vector,
+            'axes' : axis, 'chantype' : chantype
+        }
+        return self._transaction('spectrum/create', qdict)
+        
     def spectrum_create2d(self, name, xparam, yparam, xlow, xhigh, xbins, ylow, yhigh, ybins, chantype='f64'):
         """ Create a simple 2d spectrum:
         *  name - the name of the new spectrum.
@@ -1555,3 +1618,74 @@ class rustogramer:
                                at each sample position.
         '''
         return self._transaction('waveform/getall', {'name': name})
+    
+    
+    def vector_list(self, pattern='*') :
+        '''
+            List information about vector parameters.
+            note it's up to the client to determine if vector parameters are supported.
+            Parameters:
+            pattern - Optional glob pattern, only vectors with names matching the pattern
+                        are returned.  The defalut is * which matches all vectors.
+            Returns:
+                The return from the server.  If 'status' is OK, the 'detail' is an array of dicts.
+            One for each matching vector.  The keys in the dict are:
+            - name - name of the vector.
+            - low  - vector advisory low limit.
+            - high - vector advisory high limit.
+            - bins - vector binning advisory for the given low/high.
+            - units - units of measure of the vector.
+        '''        
+        return self._transaction('vector/list', {'pattern': pattern})
+    
+    
+    
+    def vector_setlow(self, name, low) :    
+        '''
+            set the advisory low limit for a vector.
+            
+            Parameters:
+            name - vector name.
+            low  - new floating point low limit value.
+            Returns:
+            Nothing in the detail unless it's more information about a failure.
+        '''
+        return self._transaction('vector/setlow', {'name': name, 'low' : low})
+    
+    def vector_sethigh(self, name, high) :
+        '''
+            Set the advisory high limit for a vector
+            
+            Paramters:
+            name - vector name
+            high - new floating point high value.
+            Returns:
+            Normal return has no detail.  Abnormal return will have
+            information about the error in the detail
+        '''
+        return self._transaction('vector/sethigh', {'name': name, 'high': high})
+    
+    def vector_setbins(self, name, bins) :
+        '''
+            Set the advisory binning of a vector\.
+            
+            Parameters:
+            name - vector name
+            bins - new advisor binning
+            Returns:
+            Normal retur does not have a 'detail' Abnormal return sets an
+            error message in the detail.
+        '''
+
+        return self._transaction('vector/setbins', {'name': name, 'bins': bins})
+    
+    def vector_setunits(self, name, units):
+        '''
+            Set the advisory units of measure of a vector.
+            
+            Parameters:
+            name - name of the vector
+        '''
+        return self._transaction('vector/setunits', {'name': name, 'units': units})
+    
+    

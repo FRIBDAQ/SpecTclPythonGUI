@@ -120,6 +120,10 @@ class SpectrumTypes(Enum):
     StripChart = auto()
     Bitmask    = auto()
     GammaSummary = auto()
+    
+    # SpecTcl as of 7.0-005 has vector 1d:
+    
+    Vector1D = auto()
 
 # Supported by each type.  This is a map of sets
 # OF types supported by both the API and the 
@@ -259,6 +263,8 @@ class ConditionTypes(Enum):
     MaskAnd = auto()             # SpecTclOnly.
     MaskNand = auto()          # SpecTclOnly.
     C2Band   = auto()          # SpecTl only.
+    VectorSliceAnd = auto()
+    VectorSliceOr  = auto()
 
 ConditionTypeNamesToType = {
     '*': ConditionTypes.And,
@@ -274,7 +280,8 @@ ConditionTypeNamesToType = {
     'em': ConditionTypes.MaskEqual,
     'am': ConditionTypes.MaskAnd,
     'nm': ConditionTypes.MaskNand,
-    
+    'vs*': ConditionTypes.VectorSliceAnd,
+    'vs+': ConditionTypes.VectorSliceOr
 }
 
 supported_condition_types = {
@@ -362,14 +369,24 @@ def _adjust_for_version():
     #   SpecTcl 5.13-013 adds support for JSON spectrum I/O:
     
     if server_program == Program.SpecTcl:
+        #5.13 adds 'json' spectrum format.
+        
         if combined_version >= _make_combined_version(5, 13, 13):
             supported_spectrum_format_strings[Program.SpecTcl].append('json')
+        
+        # Version 7.0-004 suports hdf5 spectrum format.
+        
+        if combined_version >= _make_combined_version(7,0,4):
+            supported_spectrum_format_strings[Program.SpecTcl].append('hdf5')
+            supported_spectrum_types[Program.SpecTcl].add(SpectrumTypes.Vector1D)
+            supported_condition_types[Program.SpecTcl].add(ConditionTypes.VectorSliceAnd)
+            supported_condition_types[Program.SpecTcl].add(ConditionTypes.VectorSliceOr)
+        
             
         # Version 5.14-xxx adds support for FRIBPipe filters.
         if combined_version >= _make_combined_version(5,14,0):
             spectcl_filter_formats.append("FRIBPipe")
-            
-
+        
 #
 #  Issue #172 - support both xdr and FRIBPipe filter file formats:
 #  Note:  This is only for SpecTcl as there is no support for filters
@@ -387,3 +404,14 @@ def supported_filter_formats():
         return spectcl_filter_formats
     else: 
         return []
+    
+#
+#  Issue #23 - support vector parameters:
+#   SpecTc 7.0-005 an higher.
+def has_vector_parameters() :
+    program = get_program()
+    if program == Program.SpecTcl:
+        return combined_version >= _make_combined_version(7,0,5)
+    else:
+        return False        # Rustgrammer does not have them.
+    

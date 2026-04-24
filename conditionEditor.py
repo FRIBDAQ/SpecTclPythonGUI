@@ -10,6 +10,8 @@ import NotConditionEditor
 import SliceConditionEditor
 import TwodConditionEditor
 import MaskGateEditor
+import VectorSliceConditionEditor
+
 from capabilities import (
     ConditionTypes, get_supported_condition_types, set_client, get_client
 )
@@ -51,10 +53,12 @@ class GateController:          # Base class
         self._view.commit.connect(self._create)            
     
     def _create(self):
+        
         name = self._view.name()
         if name == '' or name.isspace():
             return
         try:
+            
             self.create(name)
             self._view.clear()
         except RustogramerException as e:
@@ -70,7 +74,46 @@ class GateController:          # Base class
     def create(self, name):
         pass                                 # Derived classes must override.
     
+class VectorSliceGateController(GateController):
+    '''
+       Controller for both types of vector slice gates
+       The only difference between the two gate types is the
+       gate type string by which we parameterize the constructor.
+    '''
+     
+    def __init__(self, view, client, editor, typestring) :
+        '''
+            Parameters:
+            view - VectorSliceCOnditionEditor bound to this controller.
+            client - server client object.
+            editor - Editor object that has usful methods to call.
+            typestring - gate type string (normally 'vs+' or 'vs*')
+        '''
+        super().__init__(view, client, editor)
+        
+        self._typestring = typestring
+
+        # Load the vector drop down
+
+        self._view.load_vectors([v['name'] for v in client.vector_list()['detail']])
     
+    def create(self, name):
+        '''Create the gate '''
+        
+        vector = self._view.vector()
+        low    = self._view.low()
+        high   = self._view.high()
+        self._client.make_vector_condition(name, self._typestring, vector, low, high)
+
+class VectorSliceAndController(VectorSliceGateController):
+    def __init__(self, view, client, editor):
+        super().__init__(view, client, editor, 'vs*')
+
+class VectorSliceOrController(VectorSliceGateController):
+    def __init__(self, view, client, editor):
+        super().__init__(view, client, editor, 'vs+')
+        
+        
 class ConstantGateController(GateController):
     # Base class for  T and F gates.
     def __init__(self, view, client, editor):
@@ -237,6 +280,8 @@ class MaskNandController(GateController):
         
 _condition_table = {
     ConditionTypes.Slice: ('Slice', SliceConditionEditor.EditorView, SliceGateController),
+    ConditionTypes.VectorSliceAnd: ('Vector * slice', VectorSliceConditionEditor.EditorView, VectorSliceAndController),
+    ConditionTypes.VectorSliceOr: ('Vector + slice', VectorSliceConditionEditor.EditorView, VectorSliceOrController),
     ConditionTypes.Contour: ("Contour", TwodConditionEditor.TwodConditionEditor, ContourController),
     ConditionTypes.And: ("And", CompoundConditionEditor.EditorView, AndGateController),
     ConditionTypes.Or: ("Or", CompoundConditionEditor.EditorView, OrGateController),
@@ -261,6 +306,8 @@ _condition_table = {
 
 _type_to_label_table = {
     's' : 'Slice',
+    'vs*' : 'Vector * slice',
+    'vs+' : "Vector + slice",
     'c' : "Contour",
     '*' : "And",
     '+' : "Or",
@@ -274,6 +321,7 @@ _type_to_label_table = {
     'nm': "Mask -*",
     'F' : 'False', 
     'T' : 'True', 
+    
 }
 class ConditionEditor(QTabWidget):
     

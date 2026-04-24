@@ -29,9 +29,10 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import *
 from rustogramer_client import rustogramer as Client, RustogramerException
 
-import editor1d, editortwod, editorBitmask
+import editor1d,  editortwod, editorBitmask
 import  editorG2d, editorGD, editorProjection, editorStripchart
 import editorSummary, EnumeratedTypeSelector, editorGSummary
+import editor1dv
 from direction import Direction
 from gatelist import ConditionChooser
 
@@ -220,7 +221,108 @@ class OneDController(AbstractController):
                 error(f"Failed to bind all spectram: {e} some may not be displayable")                
             self._view.setName('')
 
+class Vector1DController(AbstractController):
+    '''
+        Controller for editing/defining a 1v spectrum. This is a 1d
+        spectum that is defined on a vector parameter rather than 
+        the scalar parametr of e.g.  OneDController above.
+    '''  
     
+    def __init__(self, editor, view):
+        '''
+            Parameters:
+               editor - the overall editor that has some facilities we will use.
+               view   - A vector1Deditor object that supplies the view for
+                        the editor.
+        '''
+        super().__init__()
+        self._editor = editor
+        self._view = view
+        self._vectorsLoaded = False
+
+        # Connect the signals of the view to our handlers:
+        
+        view.vectorSelected.connect(self._load_vector)
+        view.commit.connect(self._create)
+        
+    def visible(self):    
+        ''' 
+            Load the vector combobox from the server, if this is the first time.
+        '''
+        if not self._vectorsLoaded:
+            self._vectorsLoaded = True
+            client = get_capabilities_client()
+            vectors = client.vector_list()['detail']
+            names = [v['name'] for v in vectors]
+            self._view.load_vectors(names)
+            
+    def _create(self):
+        # Create button clicked so we need to create/replace the
+        # new spectrum after first checking that both the spectrum
+        # and vector names  have been set.
+        
+        sname = self._view.name()
+        vector = self._view.vector()
+        data_type = self._editor.channeltype_string()
+        
+        if sname is not None and len(sname) > 0 and vector is not None and len(vector) > 0:
+            client = get_capabilities_client()
+            #
+            # If the spectrum exists, this asks the user if it can be replaced and if not
+            # we just return doing nothing
+            if not ok_to_create(client, self._editor, sname):
+                return
+            # Feth the axis:
+            
+            low = self._view.low()
+            high = self._view.high()
+            bins = self._view.bins()
+            
+            # Try to make and bind the spectrum:
+            # It's possible to successfuly make the spectrum but
+            # there not to be sufficient display memory to sbind it.
+            # In that case, we just leave the spectrum in place.
+            
+            try:
+                client.spectrum_create1v(sname, vector, low, high, bins, data_type)
+            except RustogrammerException as e:
+                error(f'Unable to create spectrum {name} as described : {e}')
+                return
+            
+            try :
+                client.sbind_spectra([sname])
+            except:
+                error(f'Unable to bind {name} to display memory : {e} spectrum is defined but not displayable')
+                
+            # Reset the spetrum name. and add the spectrum to the list:
+            
+            self._view.setName('')
+            self._editor.spectrum_added(sname)
+    
+    def _load_vector(self, vector_name):
+        # The vector was selected - let's load the axis definition as
+        # suggested by the vector's properties.
+        # If the user has not selected a spectrum name suggest the 
+        # vector name:
+        
+        client = get_capabilities_client()
+        current_name = self._view.name()
+        if current_name is None or len(current_name) == 0:
+            self._view.setName(vector_name)
+        
+        vector_info = client.vector_list(vector_name)['detail'][0]
+        
+        # For us the values are never None so we don't have to run it through
+        # default().
+        self._view.setLow(float(vector_info['low']))
+        self._view.setHigh(float(vector_info['high']))
+        self._view.setBins(int(vector_info['bins']))
+        
+        
+            
+        
+        
+          
 ##
 #  Controller for the 2-d editor.
 #  This is much simpler than the 1d editor since we don't have to handle
@@ -883,6 +985,7 @@ class GammaSummaryController(AbstractController):
 #  have to concern ourselves with connecting slots etc.
 _spectrum_widgets = {
     '1D': (SpectrumTypes.Oned, editor1d.oneDEditor, OneDController),
+    '1D Vector' : (SpectrumTypes.Vector1D, editor1dv.vector1Deditor,  Vector1DController),
     '2D': (SpectrumTypes.Twod, editortwod.TwoDEditor, TwodController),
     'Summary': (SpectrumTypes.Summary, editorSummary.SummaryEditor, SummaryController),
     'Gamma 1D' : (SpectrumTypes.Gamma1D, editorSummary.SummaryEditor,G1DController),
@@ -910,7 +1013,8 @@ _type_strings = {
     #  Note that projection spectra, when made are just an ordinary spectrum.
     'S' :'StripChart',
     'b' : 'Bitmask',
-    'gs': 'Gamma summary'
+    'gs': 'Gamma summary',
+    '1v': "1D Vector"
 }
 
 #  This dict has channel type names as keys and channel type values as values:
@@ -1089,6 +1193,9 @@ class Editor(QWidget):
                 self._fillbitmask(row, view)
         elif stype == 'gs':
                 self._fillgsummary(row, view)
+        elif stype == '1v':
+            # Vector 1d spectrum Issue #23
+            self._fill1v(row, view)
         else:                
 
 
@@ -1114,9 +1221,15 @@ class Editor(QWidget):
         view.setParameter(sdef[2])
         view.setLow(sdef[3])
         view.setHigh(sdef[4])
-        view.setHigh(sdef[5])
+        view.setBins(sdef[5])
         # on success make that the current tab:
-        
+    
+    def _fill1v(self, sdef, view) :
+        view.setName(sdef[0])    
+        view.setVector(sdef[2])
+        view.setLow(sdef[3])
+        view.setHigh(sdef[4])
+        view.setBins(sdef[5])
     def _fill2d(self, sdef, view):
         view.setName(sdef[0])
         

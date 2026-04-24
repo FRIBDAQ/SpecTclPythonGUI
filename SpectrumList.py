@@ -59,7 +59,7 @@ class SpectrumView(QTableView):
         self._selected_spectra = [x.data() for x in self.selectedIndexes() if x.column() == 0]
         self._selected_rows = [x.row() for x in self.selectedIndexes() ]
         self._selected_rows = set(self._selected_rows)
-        self._selected_spectra = [self.model().item(r, 0).data(Qt.DisplayRole) for r in self._selected_rows]
+        self.selected_sepctra = [self._getItemData(r) for r in self._selected_rows]
         
     def getSelectedSpectra(self):
         return self._selected_spectra
@@ -71,7 +71,8 @@ class SpectrumView(QTableView):
         for row in self._selected_rows:
             arow = []
             for c in range(cols):
-                arow.append(self.model().item(row, c).data(Qt.DisplayRole))
+
+                arow.append(self._getItemData(row, c))
             result.append(arow)
         return result
     
@@ -87,6 +88,9 @@ class SpectrumView(QTableView):
             self.reload.emit(row)
         
 
+    def _getItemData(self, row, col=0) :
+        itemdata = self.model().index(row, col).data()
+        return itemdata
 class SpectrumNameList(QListView):
     '''
         List of spectrum names
