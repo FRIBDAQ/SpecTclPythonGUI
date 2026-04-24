@@ -307,7 +307,7 @@ class Vector1DController(AbstractController):
         
         client = get_capabilities_client()
         current_name = self._view.name()
-        if current_name is not None or len(current_name) == 0:
+        if current_name is None or len(current_name) == 0:
             self._view.setName(vector_name)
         
         vector_info = client.vector_list(vector_name)['detail'][0]
